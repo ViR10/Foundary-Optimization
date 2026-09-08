@@ -1,0 +1,175 @@
+[
+  {
+    "heat_id": "HT-20260908-001",
+    "timestamp": "2026-09-08 15:38:42",
+    "alloy_name": "SS 309 (26/12 Heat Resistant)",
+    "batch_size_kg": 1000.0,
+    "selected_option": "Option 1: Lowest Cost",
+    "total_cost_pkr": 396181.55,
+    "cost_per_kg": 396.18,
+    "recipe": [
+      {
+        "ID": 29,
+        "Material_Name": "S.S SHAVING (304)",
+        "Category": "Stainless & High Alloy",
+        "Weight_Kg": 722.4,
+        "Weight_Pct": 72.24,
+        "Rate_PKR": 220.0,
+        "Cost_PKR": 158927.55
+      },
+      {
+        "ID": 51,
+        "Material_Name": "NICKEL VALVE SCRAP - 30%",
+        "Category": "Stainless & High Alloy",
+        "Weight_Kg": 181.3,
+        "Weight_Pct": 18.13,
+        "Rate_PKR": 900.0,
+        "Cost_PKR": 163170.93
+      },
+      {
+        "ID": 37,
+        "Material_Name": "FERRO CHROME ― LOW CARBON",
+        "Category": "Ferro Alloys",
+        "Weight_Kg": 85.81,
+        "Weight_Pct": 8.58,
+        "Rate_PKR": 801.0,
+        "Cost_PKR": 68730.62
+      },
+      {
+        "ID": 36,
+        "Material_Name": "FERRO CHROME ― HIGH CARBON",
+        "Category": "Ferro Alloys",
+        "Weight_Kg": 10.49,
+        "Weight_Pct": 1.05,
+        "Rate_PKR": 510.0,
+        "Cost_PKR": 5352.44
+      }
+    ],
+    "chemistry": {
+      "C": 0.15,
+      "Cr": 22.0,
+      "Ni": 12.0,
+      "Mn": 1.018,
+      "Si": 0.567,
+      "Pb": 0.0,
+      "Sn": 0.0,
+      "Zn": 0.0,
+      "P": 0.016,
+      "S": 0.011,
+      "Cu": 0.532
+    },
+    "chemistry_table": [
+      {
+        "Element": "C",
+        "Min_Spec": 0.03,
+        "Max_Spec": 0.15,
+        "Target_Mid": 0.09,
+        "Achieved_Pct": 0.15,
+        "Recovery_Pct": 92.0,
+        "Status": "AT MAX LIMIT",
+        "Is_Primary": true
+      },
+      {
+        "Element": "Cr",
+        "Min_Spec": 22.0,
+        "Max_Spec": 24.0,
+        "Target_Mid": 23.0,
+        "Achieved_Pct": 22.0,
+        "Recovery_Pct": 95.0,
+        "Status": "AT MIN LIMIT",
+        "Is_Primary": true
+      },
+      {
+        "Element": "Ni",
+        "Min_Spec": 12.0,
+        "Max_Spec": 15.0,
+        "Target_Mid": 13.5,
+        "Achieved_Pct": 12.0,
+        "Recovery_Pct": 99.0,
+        "Status": "AT MIN LIMIT",
+        "Is_Primary": true
+      },
+      {
+        "Element": "Mn",
+        "Min_Spec": 0.5,
+        "Max_Spec": 2.0,
+        "Target_Mid": 1.25,
+        "Achieved_Pct": 1.018,
+        "Recovery_Pct": 88.0,
+        "Status": "OPTIMAL (PASS)",
+        "Is_Primary": true
+      },
+      {
+        "Element": "Si",
+        "Min_Spec": 0.5,
+        "Max_Spec": 1.5,
+        "Target_Mid": 1.0,
+        "Achieved_Pct": 0.567,
+        "Recovery_Pct": 88.0,
+        "Status": "OPTIMAL (PASS)",
+        "Is_Primary": true
+      },
+      {
+        "Element": "Pb",
+        "Min_Spec": 0.0,
+        "Max_Spec": 0.015,
+        "Target_Mid": 0.007,
+        "Achieved_Pct": 0.0,
+        "Recovery_Pct": 95.0,
+        "Status": "AT MIN LIMIT",
+        "Is_Primary": false
+      },
+      {
+        "Element": "Sn",
+        "Min_Spec": 0.0,
+        "Max_Spec": 0.03,
+        "Target_Mid": 0.015,
+        "Achieved_Pct": 0.0,
+        "Recovery_Pct": 95.0,
+        "Status": "AT MIN LIMIT",
+        "Is_Primary": false
+      },
+      {
+        "Element": "Zn",
+        "Min_Spec": 0.0,
+        "Max_Spec": 0.02,
+        "Target_Mid": 0.01,
+        "Achieved_Pct": 0.0,
+        "Recovery_Pct": 90.0,
+        "Status": "AT MIN LIMIT",
+        "Is_Primary": false
+      },
+      {
+        "Element": "P",
+        "Min_Spec": 0.0,
+        "Max_Spec": 0.045,
+        "Target_Mid": 0.022,
+        "Achieved_Pct": 0.016,
+        "Recovery_Pct": 100.0,
+        "Status": "AT MIN LIMIT",
+        "Is_Primary": false
+      },
+      {
+        "Element": "S",
+        "Min_Spec": 0.0,
+        "Max_Spec": 0.035,
+        "Target_Mid": 0.018,
+        "Achieved_Pct": 0.011,
+        "Recovery_Pct": 100.0,
+        "Status": "AT MIN LIMIT",
+        "Is_Primary": false
+      },
+      {
+        "Element": "Cu",
+        "Min_Spec": 0.0,
+        "Max_Spec": 0.6,
+        "Target_Mid": 0.3,
+        "Achieved_Pct": 0.532,
+        "Recovery_Pct": 98.0,
+        "Status": "OPTIMAL (PASS)",
+        "Is_Primary": false
+      }
+    ],
+    "notes": ""
+  }
+]
