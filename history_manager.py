@@ -114,172 +114,251 @@ class HistoryManager:
     def generate_batch_card_html(self, heat_id):
         heat = self.get_heat(heat_id)
         if not heat:
-            return "<p>Heat record not found.</p>"
-
-        recipe_rows = ""
-        for idx, item in enumerate(heat.get('recipe', []), 1):
-            recipe_rows += f"""
-            <tr style="border-bottom: 1px solid #ddd;">
-                <td style="padding: 8px; text-align: center;">[ &nbsp; ]</td>
-                <td style="padding: 8px; text-align: center;">{idx}</td>
-                <td style="padding: 8px; font-weight: 600;">{item['Material_Name']}</td>
-                <td style="padding: 8px; text-align: center;"><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">{item.get('Category', 'Scrap')}</span></td>
-                <td style="padding: 8px; text-align: right; font-size: 15px; font-weight: 700;">{item['Weight_Kg']:,.2f} kg</td>
-                <td style="padding: 8px; text-align: right;">{item.get('Weight_Pct', 0.0):.1f}%</td>
-                <td style="padding: 8px; border-bottom: 1px dashed #aaa;">&nbsp;</td>
-            </tr>
-            """
-
-        chem_badges = ""
-        for el, pct in heat.get('chemistry', {}).items():
-            chem_badges += f"""
-            <div style="display: inline-block; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; margin: 3px; font-size: 12px;">
-                <b>{el}:</b> {pct:.3f}%
-            </div>
-            """
-
-        html = f"""
-        <div style="font-family: Arial, sans-serif; background: white; color: #1e293b; padding: 25px; border-radius: 8px; border: 2px solid #334155; max-width: 800px; margin: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 15px;">
-                <div>
-                    <h2 style="margin: 0; color: #0f172a; font-size: 22px; text-transform: uppercase; letter-spacing: 1px;">⚡ FURNACE CHARGE CARD (HEAT SHEET)</h2>
-                    <div style="font-size: 12px; color: #64748b; margin-top: 4px;">AlloyForge AI Intelligent Foundry Optimization System</div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 18px; font-weight: 800; color: #1e40af;">{heat['heat_id']}</div>
-                    <div style="font-size: 12px; color: #64748b;">{heat['timestamp']}</div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 18px;">
-                <div><span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Target Alloy:</span><br><b style="font-size: 15px;">{heat['alloy_name']}</b></div>
-                <div><span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Batch Total Weight:</span><br><b style="font-size: 15px; color: #059669;">{heat['batch_size_kg']:,.0f} Kg</b></div>
-                <div><span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Charge Mix Option:</span><br><b>{heat['selected_option']}</b></div>
-                <div><span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Total Melt Cost:</span><br><b>PKR {heat['total_cost_pkr']:,.0f}</b> ({heat['cost_per_kg']:.1f}/Kg)</div>
-            </div>
-
-            <h4 style="margin: 15px 0 8px 0; color: #0f172a; font-size: 14px; text-transform: uppercase;">Furnace Charge Sequence & Scale Weights:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                <thead>
-                    <tr style="background: #0f172a; color: white;">
-                        <th style="padding: 8px; width: 40px; text-align: center;">Loaded</th>
-                        <th style="padding: 8px; width: 30px; text-align: center;">#</th>
-                        <th style="padding: 8px; text-align: left;">Raw Material / Scrap</th>
-                        <th style="padding: 8px; text-align: center;">Category</th>
-                        <th style="padding: 8px; text-align: right;">Target Weight</th>
-                        <th style="padding: 8px; text-align: right;">% Total</th>
-                        <th style="padding: 8px; width: 120px; text-align: center;">Actual Weighed (Kg)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {recipe_rows}
-                </tbody>
-            </table>
-
-            <h4 style="margin: 20px 0 8px 0; color: #0f172a; font-size: 14px; text-transform: uppercase;">Expected Tap Chemistry (Spectrometer Target):</h4>
-            <div style="margin-bottom: 25px;">
-                {chem_badges}
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; border-top: 1px solid #cbd5e1; padding-top: 18px; margin-top: 25px; font-size: 12px; color: #475569;">
-                <div>
-                    <div>Furnace Operator Signature:</div>
-                    <div style="border-bottom: 1px solid #94a3b8; height: 35px; margin-top: 5px;"></div>
-                </div>
-                <div>
-                    <div>Metallurgist / Chemist Sign:</div>
-                    <div style="border-bottom: 1px solid #94a3b8; height: 35px; margin-top: 5px;"></div>
-                </div>
-                <div>
-                    <div>Foundry In-Charge Sign:</div>
-                    <div style="border-bottom: 1px solid #94a3b8; height: 35px; margin-top: 5px;"></div>
-                </div>
-            </div>
-        </div>
-        """
-        return html
+            return "<p style='font-family: sans-serif; color: #ef4444; padding: 12px;'>Heat record not found.</p>"
+        return self._build_card_html(heat)
 
     def generate_batch_card_html_from_data(self, heat):
         """Generate batch card HTML from a heat data dict directly (for live preview without saving)."""
+        return self._build_card_html(heat)
+
+    def _build_card_html(self, heat):
         recipe_rows = ""
         for idx, item in enumerate(heat.get('recipe', []), 1):
             recipe_rows += f"""
-            <tr style="border-bottom: 1px solid #ddd;">
-                <td style="padding: 8px; text-align: center;">[ &nbsp; ]</td>
-                <td style="padding: 8px; text-align: center;">{idx}</td>
-                <td style="padding: 8px; font-weight: 600;">{item['Material_Name']}</td>
-                <td style="padding: 8px; text-align: center;"><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 11px;">{item.get('Category', 'Scrap')}</span></td>
-                <td style="padding: 8px; text-align: right; font-size: 15px; font-weight: 700;">{item['Weight_Kg']:,.2f} kg</td>
-                <td style="padding: 8px; text-align: right;">{item.get('Weight_Pct', 0.0):.1f}%</td>
-                <td style="padding: 8px; border-bottom: 1px dashed #aaa;">&nbsp;</td>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 7px 4px; text-align: center;">[ &nbsp; ]</td>
+                <td style="padding: 7px 4px; text-align: center;">{idx}</td>
+                <td style="padding: 7px 6px; font-weight: 600; font-size: 12.5px;">{item['Material_Name']}</td>
+                <td style="padding: 7px 4px; text-align: center;"><span style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 10.5px;">{item.get('Category', 'Scrap')}</span></td>
+                <td style="padding: 7px 6px; text-align: right; font-size: 13.5px; font-weight: 700; color: #0f172a;">{item['Weight_Kg']:,.2f} kg</td>
+                <td style="padding: 7px 4px; text-align: right; font-size: 12px;">{item.get('Weight_Pct', 0.0):.1f}%</td>
+                <td style="padding: 7px 4px; border-bottom: 1px dashed #cbd5e1;">&nbsp;</td>
             </tr>
             """
 
         chem_badges = ""
         for el, pct in heat.get('chemistry', {}).items():
             chem_badges += f"""
-            <div style="display: inline-block; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; margin: 3px; font-size: 12px;">
+            <div class="chem-badge">
                 <b>{el}:</b> {pct:.3f}%
             </div>
             """
 
         html = f"""
-        <div style="font-family: Arial, sans-serif; background: white; color: #1e293b; padding: 25px; border-radius: 8px; border: 2px solid #334155; max-width: 800px; margin: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 15px;">
-                <div>
-                    <h2 style="margin: 0; color: #0f172a; font-size: 22px; text-transform: uppercase; letter-spacing: 1px;">⚡ FURNACE CHARGE CARD (HEAT SHEET)</h2>
-                    <div style="font-size: 12px; color: #64748b; margin-top: 4px;">AlloyForge AI Intelligent Foundry Optimization System</div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                * {{ box-sizing: border-box; }}
+                body {{ margin: 0; padding: 6px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: transparent; }}
+                .card-container {{
+                    background: white;
+                    color: #1e293b;
+                    padding: 20px;
+                    border-radius: 10px;
+                    border: 1.5px solid #334155;
+                    max-width: 800px;
+                    margin: auto;
+                    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+                }}
+                .card-header {{
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-bottom: 2px solid #0f172a;
+                    padding-bottom: 10px;
+                    margin-bottom: 14px;
+                    gap: 8px;
+                }}
+                .header-title h2 {{
+                    margin: 0;
+                    color: #0f172a;
+                    font-size: 18px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }}
+                .header-title div {{
+                    font-size: 11px;
+                    color: #64748b;
+                    margin-top: 2px;
+                }}
+                .header-heat-id {{
+                    text-align: right;
+                }}
+                .heat-id-text {{
+                    font-size: 17px;
+                    font-weight: 800;
+                    color: #1e40af;
+                }}
+                .heat-timestamp {{
+                    font-size: 11px;
+                    color: #64748b;
+                }}
+                .summary-grid {{
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 8px;
+                    background: #f8fafc;
+                    padding: 10px;
+                    border-radius: 6px;
+                    border: 1px solid #e2e8f0;
+                    margin-bottom: 16px;
+                }}
+                .summary-item-label {{
+                    font-size: 10px;
+                    color: #64748b;
+                    text-transform: uppercase;
+                }}
+                .summary-item-val {{
+                    font-size: 13.5px;
+                    font-weight: 700;
+                }}
+                .table-wrapper {{
+                    width: 100%;
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    margin-bottom: 16px;
+                }}
+                table {{
+                    width: 100%;
+                    min-width: 540px;
+                    border-collapse: collapse;
+                    font-size: 12px;
+                }}
+                th {{
+                    background: #0f172a;
+                    color: white;
+                    padding: 7px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                }}
+                .chem-badge {{
+                    display: inline-block;
+                    background: #f1f5f9;
+                    border: 1px solid #cbd5e1;
+                    border-radius: 6px;
+                    padding: 3px 7px;
+                    margin: 2px;
+                    font-size: 11.5px;
+                }}
+                .sign-grid {{
+                    display: grid;
+                    grid-template-columns: 1fr 1fr 1fr;
+                    gap: 14px;
+                    border-top: 1px solid #cbd5e1;
+                    padding-top: 14px;
+                    margin-top: 20px;
+                    font-size: 11px;
+                    color: #475569;
+                }}
+                .sign-line {{
+                    border-bottom: 1px solid #94a3b8;
+                    height: 28px;
+                    margin-top: 4px;
+                }}
+
+                /* Mobile Viewport Adaptations */
+                @media (max-width: 600px) {{
+                    .card-container {{
+                        padding: 12px;
+                    }}
+                    .card-header {{
+                        flex-direction: column;
+                        align-items: flex-start;
+                    }}
+                    .header-heat-id {{
+                        text-align: left;
+                    }}
+                    .summary-grid {{
+                        grid-template-columns: 1fr 1fr;
+                        gap: 8px;
+                    }}
+                    .sign-grid {{
+                        grid-template-columns: 1fr;
+                        gap: 10px;
+                    }}
+                    .sign-line {{
+                        height: 24px;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="card-container">
+                <div class="card-header">
+                    <div class="header-title">
+                        <h2>⚡ FURNACE CHARGE CARD (HEAT SHEET)</h2>
+                        <div>AlloyForge AI Intelligent Foundry Optimization System</div>
+                    </div>
+                    <div class="header-heat-id">
+                        <div class="heat-id-text">{heat['heat_id']}</div>
+                        <div class="heat-timestamp">{heat['timestamp']}</div>
+                    </div>
                 </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 18px; font-weight: 800; color: #1e40af;">{heat['heat_id']}</div>
-                    <div style="font-size: 12px; color: #64748b;">{heat['timestamp']}</div>
+
+                <div class="summary-grid">
+                    <div>
+                        <div class="summary-item-label">Target Alloy</div>
+                        <div class="summary-item-val">{heat['alloy_name']}</div>
+                    </div>
+                    <div>
+                        <div class="summary-item-label">Batch Total Weight</div>
+                        <div class="summary-item-val" style="color: #059669;">{heat['batch_size_kg']:,.0f} Kg</div>
+                    </div>
+                    <div>
+                        <div class="summary-item-label">Charge Mix Option</div>
+                        <div class="summary-item-val">{heat['selected_option']}</div>
+                    </div>
+                    <div>
+                        <div class="summary-item-label">Total Melt Cost</div>
+                        <div class="summary-item-val">PKR {heat['total_cost_pkr']:,.0f} <span style="font-size:11px; font-weight:normal;">({heat['cost_per_kg']:.1f}/Kg)</span></div>
+                    </div>
+                </div>
+
+                <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 6px;">Furnace Charge Sequence & Scale Weights:</div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 35px; text-align: center;">Loaded</th>
+                                <th style="width: 25px; text-align: center;">#</th>
+                                <th style="text-align: left;">Raw Material / Scrap</th>
+                                <th style="text-align: center;">Category</th>
+                                <th style="text-align: right;">Target Weight</th>
+                                <th style="text-align: right;">% Total</th>
+                                <th style="width: 100px; text-align: center;">Actual Weighed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {recipe_rows}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; margin-bottom: 6px;">Expected Tap Chemistry (Spectrometer Target):</div>
+                <div style="margin-bottom: 14px;">
+                    {chem_badges}
+                </div>
+
+                <div class="sign-grid">
+                    <div>
+                        <div>Furnace Operator Signature:</div>
+                        <div class="sign-line"></div>
+                    </div>
+                    <div>
+                        <div>Metallurgist / Chemist Sign:</div>
+                        <div class="sign-line"></div>
+                    </div>
+                    <div>
+                        <div>Foundry In-Charge Sign:</div>
+                        <div class="sign-line"></div>
+                    </div>
                 </div>
             </div>
-
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 18px;">
-                <div><span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Target Alloy:</span><br><b style="font-size: 15px;">{heat['alloy_name']}</b></div>
-                <div><span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Batch Total Weight:</span><br><b style="font-size: 15px; color: #059669;">{heat['batch_size_kg']:,.0f} Kg</b></div>
-                <div><span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Charge Mix Option:</span><br><b>{heat['selected_option']}</b></div>
-                <div><span style="font-size: 11px; color: #64748b; text-transform: uppercase;">Total Melt Cost:</span><br><b>PKR {heat['total_cost_pkr']:,.0f}</b> ({heat['cost_per_kg']:.1f}/Kg)</div>
-            </div>
-
-            <h4 style="margin: 15px 0 8px 0; color: #0f172a; font-size: 14px; text-transform: uppercase;">Furnace Charge Sequence & Scale Weights:</h4>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                <thead>
-                    <tr style="background: #0f172a; color: white;">
-                        <th style="padding: 8px; width: 40px; text-align: center;">Loaded</th>
-                        <th style="padding: 8px; width: 30px; text-align: center;">#</th>
-                        <th style="padding: 8px; text-align: left;">Raw Material / Scrap</th>
-                        <th style="padding: 8px; text-align: center;">Category</th>
-                        <th style="padding: 8px; text-align: right;">Target Weight</th>
-                        <th style="padding: 8px; text-align: right;">% Total</th>
-                        <th style="padding: 8px; width: 120px; text-align: center;">Actual Weighed (Kg)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {recipe_rows}
-                </tbody>
-            </table>
-
-            <h4 style="margin: 20px 0 8px 0; color: #0f172a; font-size: 14px; text-transform: uppercase;">Expected Tap Chemistry (Spectrometer Target):</h4>
-            <div style="margin-bottom: 25px;">
-                {chem_badges}
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; border-top: 1px solid #cbd5e1; padding-top: 18px; margin-top: 25px; font-size: 12px; color: #475569;">
-                <div>
-                    <div>Furnace Operator Signature:</div>
-                    <div style="border-bottom: 1px solid #94a3b8; height: 35px; margin-top: 5px;"></div>
-                </div>
-                <div>
-                    <div>Metallurgist / Chemist Sign:</div>
-                    <div style="border-bottom: 1px solid #94a3b8; height: 35px; margin-top: 5px;"></div>
-                </div>
-                <div>
-                    <div>Foundry In-Charge Sign:</div>
-                    <div style="border-bottom: 1px solid #94a3b8; height: 35px; margin-top: 5px;"></div>
-                </div>
-            </div>
-        </div>
+        </body>
+        </html>
         """
         return html

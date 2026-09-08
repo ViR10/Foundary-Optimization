@@ -19,34 +19,139 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom High-End Engineering CSS
+# Custom High-End Engineering Mobile-First Responsive CSS
 st.markdown("""
 <style>
-    /* Metric Cards */
+    /* ================= GLOBAL RESPONSIVE VIEWPORT & CONTAINER ================= */
+    @media (max-width: 768px) {
+        .block-container {
+            padding-top: 1rem !important;
+            padding-bottom: 2rem !important;
+            padding-left: 0.6rem !important;
+            padding-right: 0.6rem !important;
+            max-width: 100% !important;
+        }
+        /* Mobile text scaling */
+        h1 { font-size: 1.6rem !important; }
+        h2 { font-size: 1.35rem !important; }
+        h3 { font-size: 1.15rem !important; }
+        h4 { font-size: 1.0rem !important; }
+        p, span, label { font-size: 0.9rem !important; }
+    }
+
+    /* Streamlit Tabs Mobile Smooth Scroll */
+    div[data-baseweb="tab-list"] {
+        gap: 6px !important;
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: thin !important;
+        padding-bottom: 4px !important;
+    }
+    button[data-baseweb="tab"] {
+        padding: 8px 14px !important;
+        white-space: nowrap !important;
+        font-size: 13px !important;
+        border-radius: 8px 8px 0 0 !important;
+    }
+
+    /* ================= HEADER CONTAINER ================= */
+    .foundry-header {
+        background: linear-gradient(135deg, #09131d 0%, #132738 50%, #1e3a5f 100%);
+        padding: 20px 24px;
+        border-radius: 14px;
+        color: white;
+        margin-bottom: 18px;
+        border: 1px solid #234768;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+    }
+    .header-title-box {
+        flex: 1 1 280px;
+    }
+    .header-title-box h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        line-height: 1.3;
+    }
+    .header-title-box p {
+        margin: 4px 0 0 0;
+        opacity: 0.85;
+        font-size: 12.5px;
+        line-height: 1.4;
+    }
+    .header-stats-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .header-stat-chip {
+        background: rgba(255,255,255,0.08);
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.12);
+        min-width: 110px;
+        text-align: right;
+    }
+    @media (max-width: 768px) {
+        .foundry-header {
+            padding: 14px 16px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .header-title-box h2 {
+            font-size: 17px !important;
+        }
+        .header-title-box p {
+            font-size: 11.5px !important;
+        }
+        .header-stats-row {
+            display: flex;
+            width: 100%;
+            gap: 8px;
+        }
+        .header-stat-chip {
+            flex: 1;
+            text-align: center;
+            padding: 6px 10px;
+            min-width: 0;
+        }
+    }
+
+    /* ================= METRIC & CARD STYLING ================= */
     .metric-card {
         background: linear-gradient(145deg, #1e293b, #0f172a);
         border: 1px solid #334155;
         border-radius: 12px;
-        padding: 16px 20px;
+        padding: 14px 18px;
         color: #f8fafc;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        margin-bottom: 8px;
     }
     .metric-card .label {
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
         color: #94a3b8;
     }
     .metric-card .value {
-        font-size: 26px;
+        font-size: 24px;
         font-weight: 800;
         margin: 4px 0;
         color: #38bdf8;
+        word-break: break-word;
     }
     .metric-card .subtext {
         font-size: 12px;
         color: #cbd5e1;
+        opacity: 0.9;
     }
 
     /* Option Result Cards */
@@ -54,58 +159,87 @@ st.markdown("""
         background: linear-gradient(145deg, #064e3b, #022c22);
         border: 1.5px solid #10b981;
         border-radius: 14px;
-        padding: 20px;
+        padding: 18px;
         color: white;
         box-shadow: 0 6px 20px rgba(16, 185, 129, 0.15);
+        margin-bottom: 12px;
     }
     .opt-card-2 {
         background: linear-gradient(145deg, #1e3a8a, #172554);
         border: 1.5px solid #3b82f6;
         border-radius: 14px;
-        padding: 20px;
+        padding: 18px;
         color: white;
         box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+        margin-bottom: 12px;
     }
     .opt-card-3 {
         background: linear-gradient(145deg, #581c87, #3b0764);
         border: 1.5px solid #a855f7;
         border-radius: 14px;
-        padding: 20px;
+        padding: 18px;
         color: white;
         box-shadow: 0 6px 20px rgba(168, 85, 247, 0.15);
+        margin-bottom: 12px;
     }
     .badge-tag {
         display: inline-block;
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 700;
         letter-spacing: 0.8px;
-        padding: 3px 10px;
+        padding: 3px 9px;
         border-radius: 20px;
         background: rgba(255,255,255,0.15);
         text-transform: uppercase;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
     .opt-rate {
-        font-size: 28px;
+        font-size: 24px;
         font-weight: 800;
-        margin: 6px 0;
+        margin: 4px 0;
+        word-break: break-word;
     }
     .opt-tot {
-        font-size: 14px;
+        font-size: 13.5px;
         opacity: 0.9;
     }
+
+    @media (max-width: 768px) {
+        .metric-card {
+            padding: 12px 14px;
+        }
+        .metric-card .value {
+            font-size: 20px;
+        }
+        .opt-card-1, .opt-card-2, .opt-card-3 {
+            padding: 14px;
+        }
+        .opt-rate {
+            font-size: 20px;
+        }
+        .opt-tot {
+            font-size: 12.5px;
+        }
+    }
+
+    /* Element Card Compact Container */
+    .element-card-box {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+    }
+
+    /* Mobile Touch Targets & Inputs */
+    input, select, textarea, button {
+        touch-action: manipulation;
+    }
     
-    /* Header Container */
-    .foundry-header {
-        background: linear-gradient(135deg, #09131d 0%, #132738 50%, #1e3a5f 100%);
-        padding: 22px 28px;
-        border-radius: 14px;
-        color: white;
-        margin-bottom: 20px;
-        border: 1px solid #234768;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+    /* Ensure DataFrames Scroll Smoothly on Touch */
+    div[data-testid="stDataFrame"] {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -222,18 +356,18 @@ avg_scrap_rate = dm.df_clean['Cost'].mean()
 
 st.markdown(f"""
 <div class="foundry-header">
-    <div>
-        <h2 style="margin:0; font-size:26px; font-weight:800; letter-spacing:0.5px;">⚡ ALLOYFORGE AI | SMART CHARGE OPTIMIZER</h2>
-        <p style="margin:4px 0 0 0; opacity:0.85; font-size:13px;">Foundry Matrix Linear Program • Multi-Tier Formulations • Metallurgical Recovery Engine</p>
+    <div class="header-title-box">
+        <h2>⚡ ALLOYFORGE AI | SMART CHARGE OPTIMIZER</h2>
+        <p>Foundry Matrix Linear Program • Multi-Tier Formulations • Metallurgical Recovery Engine</p>
     </div>
-    <div style="display:flex; gap:16px; text-align:right;">
-        <div style="background:rgba(255,255,255,0.08); padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.12);">
+    <div class="header-stats-row">
+        <div class="header-stat-chip">
             <div style="font-size:10px; text-transform:uppercase; color:#94a3b8;">Scrap Master</div>
-            <div style="font-size:16px; font-weight:700; color:#38bdf8;">{total_mats} Materials</div>
+            <div style="font-size:15px; font-weight:700; color:#38bdf8;">{total_mats} Materials</div>
         </div>
-        <div style="background:rgba(255,255,255,0.08); padding:8px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.12);">
+        <div class="header-stat-chip">
             <div style="font-size:10px; text-transform:uppercase; color:#94a3b8;">Furnace Heats</div>
-            <div style="font-size:16px; font-weight:700; color:#10b981;">{heats_count} Logged</div>
+            <div style="font-size:15px; font-weight:700; color:#10b981;">{heats_count} Logged</div>
         </div>
     </div>
 </div>
