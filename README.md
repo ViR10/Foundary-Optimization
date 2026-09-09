@@ -1,4 +1,4 @@
-# ⚡ AlloyForge AI | Standalone Foundry Charge Optimizer
+# ⚡ AlloyForge AI | Industrial Foundry Charge Optimization Suite
 
 An industrial-grade, **zero-dependency, standalone Linear Programming (LP)** charge optimization application designed for metal foundries, melt shops, and casting facilities. 
 
@@ -24,18 +24,13 @@ Every calculation automatically formulates 3 distinct, practical foundry charge 
 - Enforces 20 chemical element tolerance limits with furnace oxidation recovery factors (**C: 92%**, **Si: 88%**, **Mn: 88%**, **Cr: 95%**, **Zn: 90%**).
 - Enforces tramp element caps (**Pb $\le$ 0.015%**, **Sn $\le$ 0.030%**, **Zn $\le$ 0.020%**, **P $\le$ 0.045%**, **S $\le$ 0.035%**).
 
-### 3. 🤖 AI Metallurgy Copilot (Interactive Assistant)
-- Natural language chat assistant (supports English & Roman Urdu).
-- Type queries like *"Calculate 1000kg of SS 304"* or *"Check price of Ferro Chrome"*.
-- Automatically extracts target alloy, batch weight, solves linear matrices, and offers a **"⚡ Load into Optimizer"** button.
-
-### 4. 📦 Live Scrap Master & Inventory Management
+### 3. 📦 Live Scrap Master & Inventory Management
 - Pre-loaded with **55+ industrial raw materials** and **20 elements**: `Cu, Sn, Zn, Pb, Fe, Ni, P, Mn, Si, Al, S, Cr, C, Mg, Ti, Mo, V, Nb, Sb, Ca`.
 - **Inline Table Editing**: Revise scrap prices, categories, and stock availability limits with instant `localStorage` persistence.
 - **Add New Scrap Material**: Interactive modal with automatic balance detection.
 - **Data Export & Backup**: One-click CSV/Excel catalog export and full JSON backup/restore.
 
-### 5. 📜 Furnace Heat Ledger & 1-Click Printable Charge Cards
+### 4. 📜 Furnace Heat Ledger & 1-Click Printable Charge Cards
 - Permanent heat log history with operator/shift notes.
 - **Shop-Floor Charge Card (Heat Sheet)**: Formatted A4 printable card with charging sequence, scale weights, checkbox checklist `[ ]`, spectrometer tap targets, and operator/metallurgist/in-charge signature blocks.
 - Export heat ledger to CSV.
@@ -48,16 +43,15 @@ Every calculation automatically formulates 3 distinct, practical foundry charge 
 Foundary Optimizer/
 │
 ├── 🚀 Launch_App.bat          # 1-Click Windows Launcher (Opens default browser)
-├── 🌐 index.html              # Main Standalone Web Application
+├── 🌐 index.html              # Main Standalone Web Application (Bright Theme)
 ├── 📄 README.md               # Documentation & User Guide
 ├── ⚙️ .gitignore              # Git Ignore Rules
 │
 ├── 📁 css/
-│   └── style.css              # Cyber-Metallic High-End Responsive Theme
+│   └── style.css              # Precision Bright Industrial SaaS Theme
 │
 ├── 📁 js/
 │   ├── app.js                 # Master UI Application Controller
-│   ├── assistant.js           # AI Metallurgy Conversational Copilot
 │   ├── data.js                # Embedded Materials & 15+ Preset Library
 │   ├── history.js             # Heat History & Printable Charge Card Generator
 │   ├── inventory.js           # Live Scrap Master CRUD & LocalStorage Persistence

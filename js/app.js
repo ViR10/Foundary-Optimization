@@ -1,6 +1,6 @@
 /**
- * AlloyForge AI - Master Application Controller
- * Wires up Reactive UI, Tabs, Preset Loading, Charts, and Modals.
+ * AlloyForge AI - Master Application Controller (Bright Engineering Tool Edition)
+ * Zero Chat, 100% Engineering Tool Focus.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -11,36 +11,62 @@ document.addEventListener('DOMContentLoaded', () => {
         materials: invMgr.getMaterials()
     });
     const histMgr = new HistoryManager();
-    const assistant = new MetallurgyAssistant(opt, invMgr, histMgr);
 
     let activeCalculation = null;
 
     // 2. Tab Navigation
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
+    const tabBtns = document.querySelectorAll('.nav-tab[data-tab]');
+    const viewPanels = document.querySelectorAll('.view-panel');
 
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
+            viewPanels.forEach(p => p.classList.remove('active'));
             btn.classList.add('active');
             const targetId = btn.getAttribute('data-tab');
-            document.getElementById(targetId).classList.add('active');
+            const targetPanel = document.getElementById(targetId);
+            if (targetPanel) targetPanel.classList.add('active');
 
             if (targetId === 'tab-inventory') renderInventoryTable();
             if (targetId === 'tab-history') renderHistoryTable();
         });
     });
 
-    // 3. Render Header Statistics
-    function updateHeaderStats() {
+    // 3. Update Header & Summary Stats
+    function updateStats() {
         const mats = invMgr.getMaterials();
-        document.getElementById('stat-mats-count').innerText = `${mats.length} Materials`;
+        document.getElementById('stat-mats-count').innerText = `${mats.length} Items`;
         document.getElementById('stat-heats-count').innerText = `${histMgr.history.length} Logged`;
-    }
-    updateHeaderStats();
 
-    // 4. Alloy Presets Population
+        // Inventory Metrics Summary
+        const invTotalEl = document.getElementById('inv-stat-total');
+        if (invTotalEl) {
+            invTotalEl.innerText = mats.length;
+            const costs = mats.map(m => parseFloat(m.Cost || m.Cost_Per_Kg || 0));
+            const avg = costs.length ? (costs.reduce((a, b) => a + b, 0) / costs.length) : 0;
+            document.getElementById('inv-stat-avg').innerText = `PKR ${avg.toFixed(1)}`;
+
+            let minMat = mats[0];
+            let maxMat = mats[0];
+            mats.forEach(m => {
+                const c = parseFloat(m.Cost || m.Cost_Per_Kg || 0);
+                if (c < parseFloat(minMat.Cost || minMat.Cost_Per_Kg || 0)) minMat = m;
+                if (c > parseFloat(maxMat.Cost || maxMat.Cost_Per_Kg || 0)) maxMat = m;
+            });
+
+            if (minMat) {
+                document.getElementById('inv-stat-min').innerText = `PKR ${minMat.Cost || minMat.Cost_Per_Kg}`;
+                document.getElementById('inv-stat-min-name').innerText = minMat.Name.slice(0, 18);
+            }
+            if (maxMat) {
+                document.getElementById('inv-stat-max').innerText = `PKR ${maxMat.Cost || maxMat.Cost_Per_Kg}`;
+                document.getElementById('inv-stat-max-name').innerText = maxMat.Name.slice(0, 18);
+            }
+        }
+    }
+    updateStats();
+
+    // 4. Alloy Presets Loading
     const presetSelect = document.getElementById('preset-selector');
     const presets = window.ALLOYFORGE_DEFAULT_DATA.presets;
 
@@ -59,37 +85,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('element-bounds-container');
         container.innerHTML = '';
 
-        const elements = window.ALLOYFORGE_DEFAULT_DATA.elements;
         const constrainedElements = Object.keys(preset.targets);
 
         constrainedElements.forEach(el => {
             const [defLow, defHigh] = preset.targets[el];
-            const card = document.createElement('div');
-            card.className = 'element-card';
-            card.innerHTML = `
-                <div class="element-header">
-                    <span class="element-symbol">${el}</span>
-                    <span style="font-size:11px; color:#94a3b8;">Bounds (%)</span>
+            const box = document.createElement('div');
+            box.className = 'elem-bound-box';
+            box.innerHTML = `
+                <div class="elem-bound-header">
+                    <span class="elem-symbol">${el}</span>
+                    <span class="elem-label">Spec Limits (%)</span>
                 </div>
-                <div class="bounds-inputs">
+                <div class="elem-inputs-row">
                     <div>
-                        <span style="font-size:10px; color:#94a3b8;">MIN %</span>
-                        <input type="number" step="0.01" class="form-control el-min" data-element="${el}" value="${defLow}">
+                        <span>MIN %</span>
+                        <input type="number" step="0.01" class="input-control el-min" data-element="${el}" value="${defLow}">
                     </div>
                     <div>
-                        <span style="font-size:10px; color:#94a3b8;">MAX %</span>
-                        <input type="number" step="0.01" class="form-control el-max" data-element="${el}" value="${defHigh}">
+                        <span>MAX %</span>
+                        <input type="number" step="0.01" class="input-control el-max" data-element="${el}" value="${defHigh}">
                     </div>
                 </div>
             `;
-            container.appendChild(card);
+            container.appendChild(box);
         });
     }
 
     presetSelect.addEventListener('change', (e) => loadPreset(e.target.value));
     loadPreset(presetSelect.value);
 
-    // 5. Run Optimization
+    // 5. Optimization Execution
     document.getElementById('btn-optimize').addEventListener('click', () => {
         const selectedPresetName = presetSelect.value;
         const presetData = presets[selectedPresetName];
@@ -131,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         displayResults(activeCalculation);
     });
 
-    // 6. Display Results
+    // 6. Display 3 Formulation Options
     function displayResults(calc) {
         const results = calc.results;
         const resultsSection = document.getElementById('results-section');
@@ -143,9 +168,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const opt2 = results["Option 2: Balanced Mix"];
         const opt3 = results["Option 3: High Purity Mix"];
 
-        renderOptionCard('card-opt-1', opt1);
-        renderOptionCard('card-opt-2', opt2);
-        renderOptionCard('card-opt-3', opt3);
+        renderOptionCard('card-opt-1', opt1, 'tag-1', 'rate-1');
+        renderOptionCard('card-opt-2', opt2, 'tag-2', 'rate-2');
+        renderOptionCard('card-opt-3', opt3, 'tag-3', 'rate-3');
 
         renderOptionDetails(1, opt1, calc);
         renderOptionDetails(2, opt2, calc);
@@ -154,19 +179,29 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsSection.scrollIntoView({ behavior: 'smooth' });
     }
 
-    function renderOptionCard(containerId, data) {
+    function renderOptionCard(containerId, data, tagClass, rateClass) {
         const el = document.getElementById(containerId);
         if (data.success) {
             el.innerHTML = `
-                <div class="badge-tag">${data.badge}</div>
-                <h3 style="font-size:17px; margin:4px 0 6px 0;">${data.title}</h3>
-                <div style="font-size:12px; opacity:0.85;">Cost per Kg Melt</div>
-                <div class="opt-rate">PKR ${data.cost_per_kg.toFixed(2)}</div>
-                <div class="opt-tot">Total Heat: <b>PKR ${data.total_cost.toLocaleString()}</b></div>
-                <div style="font-size:11px; margin-top:6px; opacity:0.9;">Tramp Contamination: <b>${data.tramp_index}%</b></div>
+                <div class="opt-badge-tag ${tagClass}">${data.badge}</div>
+                <div class="opt-title">${data.title}</div>
+                <div class="opt-desc-text">${data.description}</div>
+                <div class="opt-price-block">
+                    <div class="opt-sub-label">Unit Melt Cost</div>
+                    <div class="opt-main-rate ${rateClass}">PKR ${data.cost_per_kg.toFixed(2)}<span style="font-size:14px; font-weight:normal; color:var(--text-muted);"> /Kg</span></div>
+                    <div class="opt-total-heat">Total Heat: <b>PKR ${data.total_cost.toLocaleString()}</b></div>
+                </div>
+                <div class="opt-meta-strip">
+                    <span>Tramp Index: <b>${data.tramp_index}%</b></span>
+                    <span>Materials: <b>${data.recipe.length} Scraps</b></span>
+                </div>
             `;
         } else {
-            el.innerHTML = `<div style="color:#ef4444; font-weight:bold;">Infeasible Target</div><p style="font-size:12px; margin-top:4px;">${data.message}</p>`;
+            el.innerHTML = `
+                <div class="opt-badge-tag" style="background:#fee2e2; color:#b91c1c;">Infeasible</div>
+                <div class="opt-title">${data.title}</div>
+                <p style="font-size:12px; color:#b91c1c; margin-top:8px;">${data.message}</p>
+            `;
         }
     }
 
@@ -175,46 +210,46 @@ document.addEventListener('DOMContentLoaded', () => {
         const chemTbody = document.getElementById(`chem-tbody-${optNum}`);
 
         if (!data.success) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#ef4444;">Infeasible with current parameters.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger); padding:16px;">Infeasible with current parameters.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = data.recipe.map(item => `
             <tr>
-                <td style="font-weight:600;">${item.Material_Name}</td>
-                <td><span style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px; font-size:11px;">${item.Category}</span></td>
-                <td style="text-align:right; font-weight:700; color:#38bdf8;">${item.Weight_Kg.toLocaleString()} kg</td>
-                <td style="text-align:right;">${item.Weight_Pct.toFixed(1)}%</td>
+                <td style="font-weight:700;">${item.Material_Name}</td>
+                <td><span style="background:var(--bg-subtle); border:1px solid var(--border); padding:2px 6px; border-radius:4px; font-size:11px;">${item.Category}</span></td>
+                <td style="text-align:right; font-weight:800; color:var(--brand-primary);">${item.Weight_Kg.toLocaleString()} kg</td>
+                <td style="text-align:right; font-weight:600;">${item.Weight_Pct.toFixed(1)}%</td>
                 <td style="text-align:right;">PKR ${item.Rate_PKR.toFixed(1)}</td>
                 <td style="text-align:right; font-weight:700;">PKR ${item.Cost_PKR.toLocaleString()}</td>
             </tr>
         `).join('');
 
         chemTbody.innerHTML = data.chemistry_table.map(row => {
-            let badgeClass = "status-pass";
-            if (row.Status.includes("LIMIT")) badgeClass = "status-limit";
-            if (row.Status.includes("SPEC")) badgeClass = "status-fail";
+            let pillClass = "pill-pass";
+            if (row.Status.includes("LIMIT")) pillClass = "pill-limit";
+            if (row.Status.includes("SPEC")) pillClass = "pill-fail";
 
             return `
                 <tr>
-                    <td style="font-weight:700; color:#38bdf8;">${row.Element}</td>
+                    <td style="font-weight:700; color:var(--brand-primary);">${row.Element}</td>
                     <td>${row.Min_Spec.toFixed(3)}</td>
                     <td>${row.Max_Spec.toFixed(3)}</td>
                     <td style="font-weight:700;">${row.Achieved_Pct.toFixed(3)}%</td>
-                    <td><span class="status-badge ${badgeClass}">${row.Status}</span></td>
+                    <td><span class="status-pill ${pillClass}">${row.Status}</span></td>
                 </tr>
             `;
         }).join('');
 
-        // Save Button Handler
+        // Save Heat Handler
         document.getElementById(`btn-save-opt-${optNum}`).onclick = () => {
             const notes = document.getElementById(`notes-opt-${optNum}`).value;
             const heatId = histMgr.saveHeat(calc.alloy, calc.batch, data.title, data, notes);
             alert(`✅ Saved heat successfully as ${heatId}!`);
-            updateHeaderStats();
+            updateStats();
         };
 
-        // Print Card Handler
+        // Print Charge Card Handler
         document.getElementById(`btn-print-opt-${optNum}`).onclick = () => {
             const tempHeat = {
                 heat_id: "PREVIEW-HT",
@@ -236,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // 7. Scrap Master Tab & Table
+    // 7. Scrap Master Inventory Rendering & Inline Editing
     function renderInventoryTable() {
         const tbody = document.getElementById('inventory-tbody');
         const filterCat = document.getElementById('inv-filter-cat').value;
@@ -259,16 +294,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tbody.innerHTML = materials.map(m => `
             <tr>
-                <td style="color:#64748b;">${m.ID}</td>
-                <td><input type="text" class="form-control inv-edit" data-id="${m.ID}" data-field="Name" value="${m.Name}" style="min-width:180px;"></td>
+                <td style="color:var(--text-muted); font-weight:bold;">${m.ID}</td>
+                <td><input type="text" class="input-control inv-edit" data-id="${m.ID}" data-field="Name" value="${m.Name}" style="min-width:180px;"></td>
                 <td>
-                    <select class="form-control inv-edit" data-id="${m.ID}" data-field="Category" style="min-width:140px;">
+                    <select class="input-control inv-edit" data-id="${m.ID}" data-field="Category" style="min-width:140px;">
                         ${categories.map(c => `<option value="${c}" ${c === m.Category ? 'selected' : ''}>${c}</option>`).join('')}
                     </select>
                 </td>
-                <td><input type="number" step="10" class="form-control inv-edit" data-id="${m.ID}" data-field="Cost" value="${m.Cost}" style="width:100px; text-align:right;"></td>
-                <td><input type="number" step="100" class="form-control inv-edit" data-id="${m.ID}" data-field="Max_Stock_Kg" value="${m.Max_Stock_Kg || ''}" placeholder="∞" style="width:90px; text-align:right;"></td>
-                <td><button class="btn btn-danger btn-sm btn-del-mat" data-id="${m.ID}" style="padding:4px 8px; font-size:11px;">🗑️</button></td>
+                <td><input type="number" step="10" class="input-control inv-edit" data-id="${m.ID}" data-field="Cost" value="${m.Cost}" style="width:110px; text-align:right; font-weight:bold;"></td>
+                <td><input type="number" step="100" class="input-control inv-edit" data-id="${m.ID}" data-field="Max_Stock_Kg" value="${m.Max_Stock_Kg || ''}" placeholder="Unlimited" style="width:100px; text-align:right;"></td>
+                <td style="text-align:center;"><button class="btn-action btn-outline-action btn-del-mat" data-id="${m.ID}" style="padding:4px 8px; color:var(--danger);" title="Delete Material">🗑️</button></td>
             </tr>
         `).join('');
 
@@ -277,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const id = parseInt(e.target.getAttribute('data-id'));
                 const field = e.target.getAttribute('data-field');
                 invMgr.updateField(id, field, e.target.value);
-                updateHeaderStats();
+                updateStats();
             });
         });
 
@@ -287,10 +322,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (confirm(`Delete material ID #${id}?`)) {
                     invMgr.deleteMaterial(id);
                     renderInventoryTable();
-                    updateHeaderStats();
+                    updateStats();
                 }
             });
         });
+
+        updateStats();
     }
 
     document.getElementById('inv-filter-cat').addEventListener('change', renderInventoryTable);
@@ -301,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm("Reset Scrap Master to original factory default compositions?")) {
             invMgr.resetToDefaults();
             renderInventoryTable();
-            updateHeaderStats();
+            updateStats();
             alert("Database reset to factory defaults!");
         }
     });
@@ -312,14 +349,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('add-mat-elements-grid');
         container.innerHTML = window.ALLOYFORGE_DEFAULT_DATA.elements.map(el => `
             <div>
-                <span style="font-size:11px; color:#94a3b8;">${el} %</span>
-                <input type="number" step="0.1" class="form-control new-el-comp" data-el="${el}" value="0.0">
+                <span style="font-size:10px; color:var(--text-muted); font-weight:700;">${el} %</span>
+                <input type="number" step="0.1" class="input-control new-el-comp" data-el="${el}" value="0.0">
             </div>
         `).join('');
         addModal.classList.add('active');
     });
 
     document.getElementById('btn-close-modal').addEventListener('click', () => addModal.classList.remove('active'));
+    document.getElementById('btn-cancel-modal').addEventListener('click', () => addModal.classList.remove('active'));
 
     document.getElementById('btn-save-new-material').addEventListener('click', () => {
         const name = document.getElementById('new-mat-name').value.trim();
@@ -341,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alert(`✅ Material added successfully as ID #${newId}!`);
         addModal.classList.remove('active');
         renderInventoryTable();
-        updateHeaderStats();
+        updateStats();
     });
 
     // 9. History Table
@@ -350,21 +388,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const heats = histMgr.history;
 
         if (heats.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#94a3b8; padding:20px;">No furnace heats logged yet. Calculate a charge mix and click "Save to Log" to record heats.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">No furnace heats logged yet. Formulate a charge in the Optimizer tab and click "Save to Log" to record heats.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = heats.map(h => `
             <tr>
-                <td style="font-weight:700; color:#38bdf8;">${h.heat_id}</td>
-                <td>${h.timestamp}</td>
-                <td style="font-weight:600;">${h.alloy_name}</td>
-                <td style="text-align:right;">${h.batch_size_kg.toLocaleString()} kg</td>
-                <td>${h.selected_option}</td>
-                <td style="text-align:right; font-weight:700;">PKR ${h.total_cost_pkr.toLocaleString()}</td>
+                <td style="font-weight:700; color:var(--brand-primary);">${h.heat_id}</td>
+                <td style="color:var(--text-secondary);">${h.timestamp}</td>
+                <td style="font-weight:700;">${h.alloy_name}</td>
+                <td style="text-align:right; font-weight:600;">${h.batch_size_kg.toLocaleString()} kg</td>
+                <td><span class="status-pill pill-pass">${h.selected_option.split(':')[0]}</span></td>
+                <td style="text-align:right;">PKR ${h.cost_per_kg.toFixed(2)}</td>
+                <td style="text-align:right; font-weight:800; color:var(--text-primary);">PKR ${h.total_cost_pkr.toLocaleString()}</td>
                 <td style="text-align:center;">
-                    <button class="btn btn-secondary btn-sm btn-print-heat" data-id="${h.heat_id}" style="padding:4px 8px; font-size:11px;">🖨️ Print</button>
-                    <button class="btn btn-danger btn-sm btn-del-heat" data-id="${h.heat_id}" style="padding:4px 8px; font-size:11px; margin-left:4px;">🗑️</button>
+                    <button class="btn-action btn-outline-action btn-print-heat" data-id="${h.heat_id}" style="padding:3px 8px; font-size:11px;">🖨️ Card</button>
+                    <button class="btn-action btn-outline-action btn-del-heat" data-id="${h.heat_id}" style="padding:3px 8px; font-size:11px; color:var(--danger); margin-left:4px;">🗑️</button>
                 </td>
             </tr>
         `).join('');
@@ -389,59 +428,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (confirm(`Delete heat record ${id}?`)) {
                     histMgr.deleteHeat(id);
                     renderHistoryTable();
-                    updateHeaderStats();
+                    updateStats();
                 }
             });
         });
     }
 
     document.getElementById('btn-export-heats-csv').addEventListener('click', () => histMgr.exportToCSV());
-
-    // 10. AI Assistant Chat
-    const chatFeed = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input-text');
-    const chatSendBtn = document.getElementById('btn-send-chat');
-
-    function sendChatMessage() {
-        const text = chatInput.value.trim();
-        if (!text) return;
-
-        // Add user bubble
-        const userDiv = document.createElement('div');
-        userDiv.className = 'chat-bubble bubble-user';
-        userDiv.innerText = text;
-        chatFeed.appendChild(userDiv);
-        chatInput.value = '';
-
-        // Process with assistant
-        setTimeout(() => {
-            const resp = assistant.processMessage(text);
-            const botDiv = document.createElement('div');
-            botDiv.className = 'chat-bubble bubble-assistant';
-            botDiv.innerHTML = resp.replyHTML;
-
-            if (resp.type === 'calculation') {
-                const loadBtn = document.createElement('button');
-                loadBtn.className = 'btn btn-primary btn-sm';
-                loadBtn.style.marginTop = '10px';
-                loadBtn.innerHTML = '⚡ Load into Optimizer';
-                loadBtn.onclick = () => {
-                    presetSelect.value = resp.alloy;
-                    loadPreset(resp.alloy);
-                    document.getElementById('batch-weight').value = resp.batch;
-                    document.querySelector('[data-tab="tab-optimizer"]').click();
-                    document.getElementById('btn-optimize').click();
-                };
-                botDiv.appendChild(loadBtn);
-            }
-
-            chatFeed.appendChild(botDiv);
-            chatFeed.scrollTop = chatFeed.scrollHeight;
-        }, 150);
-    }
-
-    chatSendBtn.addEventListener('click', sendChatMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendChatMessage();
-    });
 });
