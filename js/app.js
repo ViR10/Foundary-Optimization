@@ -1,5 +1,6 @@
 /**
- * AlloyForge - Master UI Controller (Minimalist Dynamic Sliders Edition)
+ * AlloyForge - Master UI Controller
+ * With Direct Excel (.xlsx) Import/Export, "Balance" and "Tracer" logic, and Dynamic Sliders.
  */
 
 const ELEMENT_NAMES = {
@@ -19,9 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const histMgr = new HistoryManager();
 
     let activeCalculation = null;
-    let currentTargets = {}; // Active element constraints: { 'C': [min, max], ... }
+    let currentTargets = {};
+    let editingMatId = null;
 
-    // 1. Clean Navigation Tabs
+    // 1. Navigation Tabs
     const navLinks = document.querySelectorAll('.nav-link');
     const tabViews = document.querySelectorAll('.tab-view');
 
@@ -58,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('preset-desc').innerText = preset.desc;
         currentTargets = {};
 
-        // Clone default targets
         Object.entries(preset.targets).forEach(([el, [low, high]]) => {
             currentTargets[el] = [parseFloat(low), parseFloat(high)];
         });
@@ -141,9 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         populateAddElementDropdown();
     }
 
-    // 5. Attach Slider & Stepper Event Listeners
     function attachSliderListeners() {
-        // Remove element buttons
         document.querySelectorAll('.btn-remove-elem').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const el = e.target.getAttribute('data-element');
@@ -152,64 +151,52 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Min sliders
         document.querySelectorAll('.slider-min').forEach(slider => {
             slider.addEventListener('input', (e) => {
                 const el = e.target.getAttribute('data-element');
                 let val = parseFloat(e.target.value) || 0.0;
                 let currentMax = currentTargets[el][1];
-
                 if (val > currentMax) {
                     val = currentMax;
                     e.target.value = val;
                 }
-
                 currentTargets[el][0] = val;
                 updateElementUI(el);
             });
         });
 
-        // Min number inputs
         document.querySelectorAll('.num-min').forEach(inp => {
             inp.addEventListener('change', (e) => {
                 const el = e.target.getAttribute('data-element');
                 let val = parseFloat(e.target.value) || 0.0;
                 let currentMax = currentTargets[el][1];
-
                 if (val > currentMax) val = currentMax;
                 if (val < 0) val = 0;
-
                 currentTargets[el][0] = val;
                 updateElementUI(el);
             });
         });
 
-        // Max sliders
         document.querySelectorAll('.slider-max').forEach(slider => {
             slider.addEventListener('input', (e) => {
                 const el = e.target.getAttribute('data-element');
                 let val = parseFloat(e.target.value) || 0.0;
                 let currentMin = currentTargets[el][0];
-
                 if (val < currentMin) {
                     val = currentMin;
                     e.target.value = val;
                 }
-
                 currentTargets[el][1] = val;
                 updateElementUI(el);
             });
         });
 
-        // Max number inputs
         document.querySelectorAll('.num-max').forEach(inp => {
             inp.addEventListener('change', (e) => {
                 const el = e.target.getAttribute('data-element');
                 let val = parseFloat(e.target.value) || 0.0;
                 let currentMin = currentTargets[el][0];
-
                 if (val < currentMin) val = currentMin;
-
                 currentTargets[el][1] = val;
                 updateElementUI(el);
             });
@@ -232,10 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
         card.querySelector(`#readout-${el}`).innerText = `${low.toFixed(2)}% – ${high.toFixed(2)}%`;
     }
 
-    // 6. Populate "Add Element" Dropdown
     function populateAddElementDropdown() {
         const select = document.getElementById('select-add-element');
-        select.innerHTML = '<option value="">+ Add Element to Constrain</option>';
+        select.innerHTML = '<option value="">+ Add Constrained Element</option>';
 
         const allElements = window.ALLOYFORGE_DEFAULT_DATA.elements;
         const unused = allElements.filter(el => !currentTargets[el]);
@@ -252,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const el = e.target.value;
         if (!el) return;
 
-        // Add with sensible default (0.0 to 1.0 or 0.0 to 0.5)
         let defHigh = 1.0;
         if (['Cr', 'Ni', 'Cu', 'Fe'].includes(el)) defHigh = 10.0;
         if (['C', 'P', 'S', 'Mg'].includes(el)) defHigh = 0.05;
@@ -261,10 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
         renderElementMatrix();
     });
 
-    // 7. Initial Load
     loadPreset(presetSelect.value);
 
-    // 8. Run Optimization
+    // 5. Optimization Execution
     document.getElementById('btn-optimize').addEventListener('click', () => {
         const selectedPresetName = presetSelect.value;
         const presetData = presets[selectedPresetName];
@@ -300,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
         displayResults(activeCalculation);
     });
 
-    // 9. Display 3 Formulations
     function displayResults(calc) {
         const results = calc.results;
         const section = document.getElementById('results-section');
@@ -384,14 +367,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }).join('');
 
-        // Save Heat Handler
         document.getElementById(`btn-save-opt-${optNum}`).onclick = () => {
             const notes = document.getElementById(`notes-opt-${optNum}`).value;
             const heatId = histMgr.saveHeat(calc.alloy, calc.batch, data.title, data, notes);
             alert(`✅ Saved heat as ${heatId}!`);
         };
 
-        // Print Card Handler
         document.getElementById(`btn-print-opt-${optNum}`).onclick = () => {
             const tempHeat = {
                 heat_id: "PREVIEW-HT",
@@ -413,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // 10. Scrap Master Inventory
+    // 6. Scrap Master: Table, Inline Editing & Excel Import/Export
     function renderInventoryTable() {
         const tbody = document.getElementById('inventory-tbody');
         const filterCat = document.getElementById('inv-filter-cat').value;
@@ -434,7 +415,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (filterCat !== 'all') materials = materials.filter(m => m.Category === filterCat);
         if (searchQuery) materials = materials.filter(m => (m.Name || '').toLowerCase().includes(searchQuery));
 
-        tbody.innerHTML = materials.map((m, idx) => `
+        tbody.innerHTML = materials.map((m, idx) => {
+            // Main elements preview string (e.g. "Cr: 18%, Ni: 8%")
+            const compParts = [];
+            window.ALLOYFORGE_DEFAULT_DATA.elements.forEach(el => {
+                const v = parseFloat(m[el] || 0);
+                if (v > 0.5) compParts.push(`${el}:${v.toFixed(1)}%`);
+            });
+            const compStr = compParts.slice(0, 3).join(', ') + (compParts.length > 3 ? '...' : '');
+
+            return `
             <tr>
                 <td style="color:var(--text-muted);">${m.ID || idx + 1}</td>
                 <td><input type="text" class="form-input inv-edit" data-id="${m.ID}" data-field="Name" value="${m.Name}" style="padding:4px 8px; font-size:12.5px;"></td>
@@ -443,17 +433,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${categories.map(c => `<option value="${c}" ${c === m.Category ? 'selected' : ''}>${c}</option>`).join('')}
                     </select>
                 </td>
-                <td><input type="number" step="10" class="form-input inv-edit" data-id="${m.ID}" data-field="Cost" value="${m.Cost}" style="padding:4px 8px; font-size:12.5px; width:100px; text-align:right;"></td>
-                <td><input type="number" step="100" class="form-input inv-edit" data-id="${m.ID}" data-field="Max_Stock_Kg" value="${m.Max_Stock_Kg || ''}" placeholder="∞" style="padding:4px 8px; font-size:12.5px; width:90px; text-align:right;"></td>
+                <td><input type="number" step="10" class="form-input inv-edit" data-id="${m.ID}" data-field="Cost" value="${m.Cost}" style="padding:4px 8px; font-size:12.5px; width:100px; text-align:right; font-weight:600;"></td>
+                <td><input type="number" step="100" class="form-input inv-edit" data-id="${m.ID}" data-field="Max_Stock_Kg" value="${m.Max_Stock_Kg || ''}" placeholder="∞" style="padding:4px 8px; font-size:12.5px; width:85px; text-align:right;"></td>
+                <td style="text-align:center;">
+                    <button class="btn btn-default btn-edit-comp" data-id="${m.ID}" style="padding:3px 8px; font-size:11px;" title="View and edit chemical composition">🧪 ${compStr || 'Edit %'}</button>
+                </td>
                 <td style="text-align:center;"><button class="btn btn-default btn-del-mat" data-id="${m.ID}" style="padding:2px 6px; color:var(--danger);" title="Delete Material">✕</button></td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
 
         document.querySelectorAll('.inv-edit').forEach(inp => {
             inp.addEventListener('change', (e) => {
                 const id = parseInt(e.target.getAttribute('data-id'));
                 const field = e.target.getAttribute('data-field');
                 invMgr.updateField(id, field, e.target.value);
+            });
+        });
+
+        document.querySelectorAll('.btn-edit-comp').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.target.getAttribute('data-id'));
+                openEditCompositionModal(id);
             });
         });
 
@@ -470,26 +471,150 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('inv-filter-cat').addEventListener('change', renderInventoryTable);
     document.getElementById('inv-search').addEventListener('input', renderInventoryTable);
-    document.getElementById('btn-export-csv').addEventListener('click', () => invMgr.exportToCSV());
-    document.getElementById('btn-export-json').addEventListener('click', () => invMgr.exportToJSON());
+
+    // Excel Export
+    document.getElementById('btn-export-excel').addEventListener('click', () => {
+        invMgr.exportToExcelFile();
+    });
+
+    // Excel Import
+    const excelFileInput = document.getElementById('excel-file-input');
+    document.getElementById('btn-import-excel').addEventListener('click', () => {
+        excelFileInput.click();
+    });
+
+    excelFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const res = await invMgr.importFromExcelFile(file);
+            alert(`✅ Successfully imported ${res.count} materials from Excel!\n\nAll "Balance" elements and "Traces" were automatically normalized.`);
+            renderInventoryTable();
+            opt.setMaterials(invMgr.getMaterials());
+        } catch (err) {
+            alert(`❌ Excel import failed: ${err.message}`);
+        }
+        excelFileInput.value = '';
+    });
+
     document.getElementById('btn-reset-db').addEventListener('click', () => {
         if (confirm("Reset Scrap Master to original factory default compositions?")) {
             invMgr.resetToDefaults();
             renderInventoryTable();
+            opt.setMaterials(invMgr.getMaterials());
             alert("Database reset to factory defaults!");
         }
     });
 
-    // 11. Add Material Modal
+    // 7. Edit Composition Modal
+    const compModal = document.getElementById('modal-edit-composition');
+    function openEditCompositionModal(matId) {
+        editingMatId = matId;
+        const mat = invMgr.getMaterials().find(m => m.ID === matId);
+        if (!mat) return;
+
+        document.getElementById('edit-comp-mat-title').innerText = `Edit Composition: ${mat.Name}`;
+        const container = document.getElementById('edit-mat-elements-grid');
+        const elements = window.ALLOYFORGE_DEFAULT_DATA.elements;
+
+        container.innerHTML = elements.map(el => {
+            const v = parseFloat(mat[el] || 0.0);
+            return `
+                <div style="background:#ffffff; border:1px solid var(--border); padding:4px 6px; border-radius:4px;">
+                    <span style="font-size:10px; font-weight:700; color:var(--text-muted);">${el} %</span>
+                    <input type="number" step="0.05" class="form-input edit-comp-val" data-el="${el}" value="${v.toFixed(3)}" style="padding:2px 4px; font-size:11.5px; text-align:right;">
+                </div>
+            `;
+        }).join('');
+
+        function updateCompTotal() {
+            let sum = 0.0;
+            document.querySelectorAll('.edit-comp-val').forEach(inp => {
+                sum += parseFloat(inp.value) || 0.0;
+            });
+            document.getElementById('edit-comp-total-readout').innerText = `Total: ${sum.toFixed(2)}%`;
+            document.getElementById('edit-comp-total-readout').style.color = (sum > 101.0 || sum < 98.0) ? 'var(--danger)' : 'var(--green)';
+        }
+
+        document.querySelectorAll('.edit-comp-val').forEach(inp => {
+            inp.addEventListener('input', updateCompTotal);
+        });
+
+        updateCompTotal();
+        compModal.classList.add('active');
+    }
+
+    document.getElementById('btn-close-comp-modal').onclick = () => compModal.classList.remove('active');
+    document.getElementById('btn-cancel-comp-modal').onclick = () => compModal.classList.remove('active');
+
+    document.getElementById('btn-save-comp-modal').onclick = () => {
+        if (!editingMatId) return;
+        const mat = invMgr.getMaterials().find(m => m.ID === editingMatId);
+        if (mat) {
+            document.querySelectorAll('.edit-comp-val').forEach(inp => {
+                const el = inp.getAttribute('data-el');
+                const val = parseFloat(inp.value) || 0.0;
+                mat[el] = val;
+            });
+            invMgr.saveMaterials();
+            renderInventoryTable();
+            opt.setMaterials(invMgr.getMaterials());
+            compModal.classList.remove('active');
+            alert(`✅ Composition for ${mat.Name} updated!`);
+        }
+    };
+
+    // 8. Add Material Modal (with Balance Auto-Calculation)
     const addModal = document.getElementById('modal-add-material');
     document.getElementById('btn-open-add-modal').addEventListener('click', () => {
         const container = document.getElementById('add-mat-elements-grid');
-        container.innerHTML = window.ALLOYFORGE_DEFAULT_DATA.elements.map(el => `
-            <div>
-                <span style="font-size:10px; color:var(--text-muted);">${el} %</span>
-                <input type="number" step="0.1" class="form-input new-el-comp" data-el="${el}" value="0.0" style="padding:3px 6px; font-size:11px;">
+        const elements = window.ALLOYFORGE_DEFAULT_DATA.elements;
+
+        container.innerHTML = elements.map(el => `
+            <div style="background:#ffffff; border:1px solid var(--border); padding:4px 6px; border-radius:4px;">
+                <span style="font-size:10px; font-weight:700; color:var(--text-muted);">${el} %</span>
+                <input type="text" class="form-input new-el-input" data-el="${el}" placeholder="0" style="padding:2px 4px; font-size:11.5px; text-align:right;">
             </div>
         `).join('');
+
+        function updateBalancePreview() {
+            const balEl = document.getElementById('new-mat-balance-el').value;
+            let otherSum = 0.0;
+
+            document.querySelectorAll('.new-el-input').forEach(inp => {
+                const el = inp.getAttribute('data-el');
+                const s = inp.value.trim().toLowerCase();
+                let val = parseFloat(s) || 0.0;
+                if (s === 'tracer' || s === 'traces' || s === 'trace' || s === '') val = 0.0;
+
+                if (el !== balEl) {
+                    otherSum += val;
+                }
+            });
+
+            if (balEl !== 'None') {
+                const balInput = document.querySelector(`.new-el-input[data-el="${balEl}"]`);
+                if (balInput) {
+                    const remaining = Math.max(0.0, 100.0 - otherSum);
+                    balInput.value = remaining.toFixed(2);
+                }
+            }
+
+            let total = 0.0;
+            document.querySelectorAll('.new-el-input').forEach(inp => {
+                total += parseFloat(inp.value) || 0.0;
+            });
+
+            document.getElementById('add-mat-total-preview').innerText = `Total: ${total.toFixed(2)}%`;
+        }
+
+        document.getElementById('new-mat-balance-el').onchange = updateBalancePreview;
+        document.querySelectorAll('.new-el-input').forEach(inp => {
+            inp.addEventListener('input', updateBalancePreview);
+        });
+
+        updateBalancePreview();
         addModal.classList.add('active');
     });
 
@@ -508,17 +633,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const comp = {};
-        document.querySelectorAll('.new-el-comp').forEach(inp => {
-            comp[inp.getAttribute('data-el')] = parseFloat(inp.value) || 0.0;
+        document.querySelectorAll('.new-el-input').forEach(inp => {
+            const el = inp.getAttribute('data-el');
+            const s = inp.value.trim().toLowerCase();
+            let val = parseFloat(s) || 0.0;
+            if (s === 'tracer' || s === 'traces' || s === 'trace' || s === '') val = 0.0;
+            comp[el] = val;
         });
 
         const newId = invMgr.addMaterial(name, cost, cat, comp, stock);
         alert(`✅ Material added as ID #${newId}!`);
         addModal.classList.remove('active');
         renderInventoryTable();
+        opt.setMaterials(invMgr.getMaterials());
     });
 
-    // 12. History Table
+    // 9. History Table
     function renderHistoryTable() {
         const tbody = document.getElementById('history-tbody');
         const heats = histMgr.history;
