@@ -1,10 +1,16 @@
 /**
- * AlloyForge AI - Master Application Controller (Bright Engineering Tool Edition)
- * Zero Chat, 100% Engineering Tool Focus.
+ * AlloyForge - Master UI Controller (Minimalist Dynamic Sliders Edition)
  */
 
+const ELEMENT_NAMES = {
+    'C': 'Carbon', 'Si': 'Silicon', 'Mn': 'Manganese', 'Cr': 'Chromium',
+    'Ni': 'Nickel', 'Mo': 'Molybdenum', 'Cu': 'Copper', 'Fe': 'Iron',
+    'Al': 'Aluminium', 'Ti': 'Titanium', 'Mg': 'Magnesium', 'P': 'Phosphorus',
+    'S': 'Sulfur', 'Pb': 'Lead', 'Zn': 'Zinc', 'Sn': 'Tin',
+    'V': 'Vanadium', 'Nb': 'Niobium', 'Ca': 'Calcium', 'Sb': 'Antimony'
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize Core Managers
     const invMgr = new InventoryManager();
     const opt = new FoundryChargeOptimizer({
         ...window.ALLOYFORGE_DEFAULT_DATA,
@@ -13,60 +19,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const histMgr = new HistoryManager();
 
     let activeCalculation = null;
+    let currentTargets = {}; // Active element constraints: { 'C': [min, max], ... }
 
-    // 2. Tab Navigation
-    const tabBtns = document.querySelectorAll('.nav-tab[data-tab]');
-    const viewPanels = document.querySelectorAll('.view-panel');
+    // 1. Clean Navigation Tabs
+    const navLinks = document.querySelectorAll('.nav-link');
+    const tabViews = document.querySelectorAll('.tab-view');
 
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            viewPanels.forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-            const targetId = btn.getAttribute('data-tab');
-            const targetPanel = document.getElementById(targetId);
-            if (targetPanel) targetPanel.classList.add('active');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.forEach(l => l.classList.remove('active'));
+            tabViews.forEach(v => v.classList.remove('active'));
+            link.classList.add('active');
+            const targetId = link.getAttribute('data-tab');
+            const view = document.getElementById(targetId);
+            if (view) view.classList.add('active');
 
             if (targetId === 'tab-inventory') renderInventoryTable();
             if (targetId === 'tab-history') renderHistoryTable();
         });
     });
 
-    // 3. Update Header & Summary Stats
-    function updateStats() {
-        const mats = invMgr.getMaterials();
-        document.getElementById('stat-mats-count').innerText = `${mats.length} Items`;
-        document.getElementById('stat-heats-count').innerText = `${histMgr.history.length} Logged`;
-
-        // Inventory Metrics Summary
-        const invTotalEl = document.getElementById('inv-stat-total');
-        if (invTotalEl) {
-            invTotalEl.innerText = mats.length;
-            const costs = mats.map(m => parseFloat(m.Cost || m.Cost_Per_Kg || 0));
-            const avg = costs.length ? (costs.reduce((a, b) => a + b, 0) / costs.length) : 0;
-            document.getElementById('inv-stat-avg').innerText = `PKR ${avg.toFixed(1)}`;
-
-            let minMat = mats[0];
-            let maxMat = mats[0];
-            mats.forEach(m => {
-                const c = parseFloat(m.Cost || m.Cost_Per_Kg || 0);
-                if (c < parseFloat(minMat.Cost || minMat.Cost_Per_Kg || 0)) minMat = m;
-                if (c > parseFloat(maxMat.Cost || maxMat.Cost_Per_Kg || 0)) maxMat = m;
-            });
-
-            if (minMat) {
-                document.getElementById('inv-stat-min').innerText = `PKR ${minMat.Cost || minMat.Cost_Per_Kg}`;
-                document.getElementById('inv-stat-min-name').innerText = minMat.Name.slice(0, 18);
-            }
-            if (maxMat) {
-                document.getElementById('inv-stat-max').innerText = `PKR ${maxMat.Cost || maxMat.Cost_Per_Kg}`;
-                document.getElementById('inv-stat-max-name').innerText = maxMat.Name.slice(0, 18);
-            }
-        }
-    }
-    updateStats();
-
-    // 4. Alloy Presets Loading
+    // 2. Alloy Presets Population
     const presetSelect = document.getElementById('preset-selector');
     const presets = window.ALLOYFORGE_DEFAULT_DATA.presets;
 
@@ -77,44 +50,221 @@ document.addEventListener('DOMContentLoaded', () => {
         presetSelect.appendChild(optEl);
     });
 
+    // 3. Load Preset Targets
     function loadPreset(presetName) {
         const preset = presets[presetName];
         if (!preset) return;
 
-        document.getElementById('preset-desc').innerText = `ℹ️ ${preset.desc}`;
-        const container = document.getElementById('element-bounds-container');
-        container.innerHTML = '';
+        document.getElementById('preset-desc').innerText = preset.desc;
+        currentTargets = {};
 
-        const constrainedElements = Object.keys(preset.targets);
-
-        constrainedElements.forEach(el => {
-            const [defLow, defHigh] = preset.targets[el];
-            const box = document.createElement('div');
-            box.className = 'elem-bound-box';
-            box.innerHTML = `
-                <div class="elem-bound-header">
-                    <span class="elem-symbol">${el}</span>
-                    <span class="elem-label">Spec Limits (%)</span>
-                </div>
-                <div class="elem-inputs-row">
-                    <div>
-                        <span>MIN %</span>
-                        <input type="number" step="0.01" class="input-control el-min" data-element="${el}" value="${defLow}">
-                    </div>
-                    <div>
-                        <span>MAX %</span>
-                        <input type="number" step="0.01" class="input-control el-max" data-element="${el}" value="${defHigh}">
-                    </div>
-                </div>
-            `;
-            container.appendChild(box);
+        // Clone default targets
+        Object.entries(preset.targets).forEach(([el, [low, high]]) => {
+            currentTargets[el] = [parseFloat(low), parseFloat(high)];
         });
+
+        renderElementMatrix();
+        populateAddElementDropdown();
     }
 
     presetSelect.addEventListener('change', (e) => loadPreset(e.target.value));
+
+    // 4. Dynamic Element Matrix with Sliders
+    function getSliderMax(el, currentMaxVal) {
+        let baseMax = 20.0;
+        if (['C', 'P', 'S', 'Mg', 'Ti', 'Nb', 'V', 'Ca', 'Sb'].includes(el)) {
+            baseMax = 4.0;
+        } else if (['Cr', 'Ni', 'Cu', 'Fe'].includes(el)) {
+            baseMax = 100.0;
+        }
+        return Math.max(baseMax, Math.ceil(currentMaxVal * 1.25));
+    }
+
+    function getSliderStep(el) {
+        if (['C', 'P', 'S', 'Mg', 'Ti', 'Nb', 'V', 'Ca', 'Sb'].includes(el)) return 0.005;
+        if (['Cr', 'Ni', 'Cu', 'Fe'].includes(el)) return 0.1;
+        return 0.02;
+    }
+
+    function renderElementMatrix() {
+        const grid = document.getElementById('elements-slider-grid');
+        grid.innerHTML = '';
+
+        Object.entries(currentTargets).forEach(([el, [low, high]]) => {
+            const elName = ELEMENT_NAMES[el] || el;
+            const sliderMax = getSliderMax(el, high);
+            const sliderStep = getSliderStep(el);
+
+            const card = document.createElement('div');
+            card.className = 'element-card';
+            card.id = `elem-card-${el}`;
+            card.innerHTML = `
+                <div class="elem-card-top">
+                    <div class="elem-badge-group">
+                        <span class="elem-symbol">${el}</span>
+                        <span class="elem-fullname">${elName}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="elem-range-readout" id="readout-${el}">${low.toFixed(2)}% – ${high.toFixed(2)}%</span>
+                        <button class="btn-remove-elem" data-element="${el}" title="Remove this element">✕</button>
+                    </div>
+                </div>
+
+                <!-- Min Slider -->
+                <div class="slider-control-row">
+                    <div class="slider-label-bar">
+                        <span>MINIMUM LIMIT</span>
+                        <span id="label-min-${el}">${low.toFixed(3)}%</span>
+                    </div>
+                    <div class="slider-input-combo">
+                        <input type="range" class="range-slider slider-min" data-element="${el}" min="0" max="${sliderMax}" step="${sliderStep}" value="${low}">
+                        <input type="number" class="num-stepper num-min" data-element="${el}" min="0" max="${sliderMax}" step="${sliderStep}" value="${low.toFixed(3)}">
+                    </div>
+                </div>
+
+                <!-- Max Slider -->
+                <div class="slider-control-row">
+                    <div class="slider-label-bar">
+                        <span>MAXIMUM LIMIT</span>
+                        <span id="label-max-${el}">${high.toFixed(3)}%</span>
+                    </div>
+                    <div class="slider-input-combo">
+                        <input type="range" class="range-slider slider-max" data-element="${el}" min="0" max="${sliderMax}" step="${sliderStep}" value="${high}">
+                        <input type="number" class="num-stepper num-max" data-element="${el}" min="0" max="${sliderMax}" step="${sliderStep}" value="${high.toFixed(3)}">
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        attachSliderListeners();
+        populateAddElementDropdown();
+    }
+
+    // 5. Attach Slider & Stepper Event Listeners
+    function attachSliderListeners() {
+        // Remove element buttons
+        document.querySelectorAll('.btn-remove-elem').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const el = e.target.getAttribute('data-element');
+                delete currentTargets[el];
+                renderElementMatrix();
+            });
+        });
+
+        // Min sliders
+        document.querySelectorAll('.slider-min').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const el = e.target.getAttribute('data-element');
+                let val = parseFloat(e.target.value) || 0.0;
+                let currentMax = currentTargets[el][1];
+
+                if (val > currentMax) {
+                    val = currentMax;
+                    e.target.value = val;
+                }
+
+                currentTargets[el][0] = val;
+                updateElementUI(el);
+            });
+        });
+
+        // Min number inputs
+        document.querySelectorAll('.num-min').forEach(inp => {
+            inp.addEventListener('change', (e) => {
+                const el = e.target.getAttribute('data-element');
+                let val = parseFloat(e.target.value) || 0.0;
+                let currentMax = currentTargets[el][1];
+
+                if (val > currentMax) val = currentMax;
+                if (val < 0) val = 0;
+
+                currentTargets[el][0] = val;
+                updateElementUI(el);
+            });
+        });
+
+        // Max sliders
+        document.querySelectorAll('.slider-max').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const el = e.target.getAttribute('data-element');
+                let val = parseFloat(e.target.value) || 0.0;
+                let currentMin = currentTargets[el][0];
+
+                if (val < currentMin) {
+                    val = currentMin;
+                    e.target.value = val;
+                }
+
+                currentTargets[el][1] = val;
+                updateElementUI(el);
+            });
+        });
+
+        // Max number inputs
+        document.querySelectorAll('.num-max').forEach(inp => {
+            inp.addEventListener('change', (e) => {
+                const el = e.target.getAttribute('data-element');
+                let val = parseFloat(e.target.value) || 0.0;
+                let currentMin = currentTargets[el][0];
+
+                if (val < currentMin) val = currentMin;
+
+                currentTargets[el][1] = val;
+                updateElementUI(el);
+            });
+        });
+    }
+
+    function updateElementUI(el) {
+        const [low, high] = currentTargets[el];
+        const card = document.getElementById(`elem-card-${el}`);
+        if (!card) return;
+
+        card.querySelector('.slider-min').value = low;
+        card.querySelector('.num-min').value = low.toFixed(3);
+        card.querySelector(`#label-min-${el}`).innerText = `${low.toFixed(3)}%`;
+
+        card.querySelector('.slider-max').value = high;
+        card.querySelector('.num-max').value = high.toFixed(3);
+        card.querySelector(`#label-max-${el}`).innerText = `${high.toFixed(3)}%`;
+
+        card.querySelector(`#readout-${el}`).innerText = `${low.toFixed(2)}% – ${high.toFixed(2)}%`;
+    }
+
+    // 6. Populate "Add Element" Dropdown
+    function populateAddElementDropdown() {
+        const select = document.getElementById('select-add-element');
+        select.innerHTML = '<option value="">+ Add Element to Constrain</option>';
+
+        const allElements = window.ALLOYFORGE_DEFAULT_DATA.elements;
+        const unused = allElements.filter(el => !currentTargets[el]);
+
+        unused.forEach(el => {
+            const optEl = document.createElement('option');
+            optEl.value = el;
+            optEl.innerText = `${el} — ${ELEMENT_NAMES[el] || el}`;
+            select.appendChild(optEl);
+        });
+    }
+
+    document.getElementById('select-add-element').addEventListener('change', (e) => {
+        const el = e.target.value;
+        if (!el) return;
+
+        // Add with sensible default (0.0 to 1.0 or 0.0 to 0.5)
+        let defHigh = 1.0;
+        if (['Cr', 'Ni', 'Cu', 'Fe'].includes(el)) defHigh = 10.0;
+        if (['C', 'P', 'S', 'Mg'].includes(el)) defHigh = 0.05;
+
+        currentTargets[el] = [0.0, defHigh];
+        renderElementMatrix();
+    });
+
+    // 7. Initial Load
     loadPreset(presetSelect.value);
 
-    // 5. Optimization Execution
+    // 8. Run Optimization
     document.getElementById('btn-optimize').addEventListener('click', () => {
         const selectedPresetName = presetSelect.value;
         const presetData = presets[selectedPresetName];
@@ -123,21 +273,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const useTrampGuard = document.getElementById('toggle-tramp').checked;
         const useStockLimits = document.getElementById('toggle-stock').checked;
 
-        const targets = {};
-        const minInputs = document.querySelectorAll('.el-min');
-        const maxInputs = document.querySelectorAll('.el-max');
-
-        minInputs.forEach((minInp, idx) => {
-            const el = minInp.getAttribute('data-element');
-            const low = parseFloat(minInp.value) || 0.0;
-            const high = parseFloat(maxInputs[idx].value) || 0.0;
-            targets[el] = [low, high];
-        });
+        if (Object.keys(currentTargets).length === 0) {
+            alert("Please constrain at least one chemical element.");
+            return;
+        }
 
         opt.setMaterials(invMgr.getMaterials());
 
         const results = opt.solveAllOptions({
-            targets: targets,
+            targets: currentTargets,
             batchSize: batchWeight,
             alloyFamily: useTrampGuard ? (presetData?.family || "stainless") : null,
             useRecovery: useRecovery,
@@ -148,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeCalculation = {
             alloy: selectedPresetName,
             batch: batchWeight,
-            targets: targets,
+            targets: currentTargets,
             results: results,
             timestamp: new Date().toLocaleString()
         };
@@ -156,50 +300,50 @@ document.addEventListener('DOMContentLoaded', () => {
         displayResults(activeCalculation);
     });
 
-    // 6. Display 3 Formulation Options
+    // 9. Display 3 Formulations
     function displayResults(calc) {
         const results = calc.results;
-        const resultsSection = document.getElementById('results-section');
-        resultsSection.style.display = 'block';
+        const section = document.getElementById('results-section');
+        section.style.display = 'block';
 
-        document.getElementById('results-header-title').innerText = `🏆 Formulated Charge Options for ${calc.alloy} (${calc.batch.toLocaleString()} Kg Batch)`;
+        document.getElementById('results-header-title').innerText = `Formulated Mixes for ${calc.alloy} (${calc.batch.toLocaleString()} Kg)`;
 
         const opt1 = results["Option 1: Lowest Cost"];
         const opt2 = results["Option 2: Balanced Mix"];
         const opt3 = results["Option 3: High Purity Mix"];
 
-        renderOptionCard('card-opt-1', opt1, 'tag-1', 'rate-1');
-        renderOptionCard('card-opt-2', opt2, 'tag-2', 'rate-2');
-        renderOptionCard('card-opt-3', opt3, 'tag-3', 'rate-3');
+        renderOptionCard('card-opt-1', opt1, 'badge-1', 'rate-val-1');
+        renderOptionCard('card-opt-2', opt2, 'badge-2', 'rate-val-2');
+        renderOptionCard('card-opt-3', opt3, 'badge-3', 'rate-val-3');
 
         renderOptionDetails(1, opt1, calc);
         renderOptionDetails(2, opt2, calc);
         renderOptionDetails(3, opt3, calc);
 
-        resultsSection.scrollIntoView({ behavior: 'smooth' });
+        section.scrollIntoView({ behavior: 'smooth' });
     }
 
-    function renderOptionCard(containerId, data, tagClass, rateClass) {
+    function renderOptionCard(containerId, data, badgeClass, rateValClass) {
         const el = document.getElementById(containerId);
         if (data.success) {
             el.innerHTML = `
-                <div class="opt-badge-tag ${tagClass}">${data.badge}</div>
-                <div class="opt-title">${data.title}</div>
-                <div class="opt-desc-text">${data.description}</div>
-                <div class="opt-price-block">
-                    <div class="opt-sub-label">Unit Melt Cost</div>
-                    <div class="opt-main-rate ${rateClass}">PKR ${data.cost_per_kg.toFixed(2)}<span style="font-size:14px; font-weight:normal; color:var(--text-muted);"> /Kg</span></div>
-                    <div class="opt-total-heat">Total Heat: <b>PKR ${data.total_cost.toLocaleString()}</b></div>
+                <div class="tier-badge ${badgeClass}">${data.badge}</div>
+                <div class="tier-title">${data.title}</div>
+                <div class="tier-desc">${data.description}</div>
+                <div class="tier-rate-box">
+                    <div class="tier-rate-label">Rate / Kg</div>
+                    <div class="tier-rate-val ${rateValClass}">PKR ${data.cost_per_kg.toFixed(2)}</div>
+                    <div class="tier-total-val">Total: PKR ${data.total_cost.toLocaleString()}</div>
                 </div>
-                <div class="opt-meta-strip">
+                <div class="tier-meta">
                     <span>Tramp Index: <b>${data.tramp_index}%</b></span>
                     <span>Materials: <b>${data.recipe.length} Scraps</b></span>
                 </div>
             `;
         } else {
             el.innerHTML = `
-                <div class="opt-badge-tag" style="background:#fee2e2; color:#b91c1c;">Infeasible</div>
-                <div class="opt-title">${data.title}</div>
+                <div class="tier-badge" style="background:#fee2e2; color:#b91c1c;">Infeasible</div>
+                <div class="tier-title">${data.title}</div>
                 <p style="font-size:12px; color:#b91c1c; margin-top:8px;">${data.message}</p>
             `;
         }
@@ -210,33 +354,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const chemTbody = document.getElementById(`chem-tbody-${optNum}`);
 
         if (!data.success) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger); padding:16px;">Infeasible with current parameters.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--danger); padding:12px;">Infeasible target.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = data.recipe.map(item => `
             <tr>
-                <td style="font-weight:700;">${item.Material_Name}</td>
-                <td><span style="background:var(--bg-subtle); border:1px solid var(--border); padding:2px 6px; border-radius:4px; font-size:11px;">${item.Category}</span></td>
-                <td style="text-align:right; font-weight:800; color:var(--brand-primary);">${item.Weight_Kg.toLocaleString()} kg</td>
-                <td style="text-align:right; font-weight:600;">${item.Weight_Pct.toFixed(1)}%</td>
-                <td style="text-align:right;">PKR ${item.Rate_PKR.toFixed(1)}</td>
-                <td style="text-align:right; font-weight:700;">PKR ${item.Cost_PKR.toLocaleString()}</td>
+                <td style="font-weight:600;">${item.Material_Name}</td>
+                <td><span style="font-size:11px; color:var(--text-muted);">${item.Category}</span></td>
+                <td style="text-align:right; font-weight:700; color:var(--primary);">${item.Weight_Kg.toLocaleString()} kg</td>
+                <td style="text-align:right;">${item.Weight_Pct.toFixed(1)}%</td>
+                <td style="text-align:right; font-weight:600;">PKR ${item.Cost_PKR.toLocaleString()}</td>
             </tr>
         `).join('');
 
         chemTbody.innerHTML = data.chemistry_table.map(row => {
-            let pillClass = "pill-pass";
-            if (row.Status.includes("LIMIT")) pillClass = "pill-limit";
-            if (row.Status.includes("SPEC")) pillClass = "pill-fail";
+            let tagClass = "tag-pass";
+            if (row.Status.includes("LIMIT")) tagClass = "tag-limit";
+            if (row.Status.includes("SPEC")) tagClass = "tag-fail";
 
             return `
                 <tr>
-                    <td style="font-weight:700; color:var(--brand-primary);">${row.Element}</td>
+                    <td style="font-weight:600; color:var(--primary);">${row.Element}</td>
                     <td>${row.Min_Spec.toFixed(3)}</td>
                     <td>${row.Max_Spec.toFixed(3)}</td>
-                    <td style="font-weight:700;">${row.Achieved_Pct.toFixed(3)}%</td>
-                    <td><span class="status-pill ${pillClass}">${row.Status}</span></td>
+                    <td style="font-weight:600;">${row.Achieved_Pct.toFixed(3)}%</td>
+                    <td><span class="status-tag ${tagClass}">${row.Status}</span></td>
                 </tr>
             `;
         }).join('');
@@ -245,11 +388,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(`btn-save-opt-${optNum}`).onclick = () => {
             const notes = document.getElementById(`notes-opt-${optNum}`).value;
             const heatId = histMgr.saveHeat(calc.alloy, calc.batch, data.title, data, notes);
-            alert(`✅ Saved heat successfully as ${heatId}!`);
-            updateStats();
+            alert(`✅ Saved heat as ${heatId}!`);
         };
 
-        // Print Charge Card Handler
+        // Print Card Handler
         document.getElementById(`btn-print-opt-${optNum}`).onclick = () => {
             const tempHeat = {
                 heat_id: "PREVIEW-HT",
@@ -271,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // 7. Scrap Master Inventory Rendering & Inline Editing
+    // 10. Scrap Master Inventory
     function renderInventoryTable() {
         const tbody = document.getElementById('inventory-tbody');
         const filterCat = document.getElementById('inv-filter-cat').value;
@@ -292,18 +434,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (filterCat !== 'all') materials = materials.filter(m => m.Category === filterCat);
         if (searchQuery) materials = materials.filter(m => (m.Name || '').toLowerCase().includes(searchQuery));
 
-        tbody.innerHTML = materials.map(m => `
+        tbody.innerHTML = materials.map((m, idx) => `
             <tr>
-                <td style="color:var(--text-muted); font-weight:bold;">${m.ID}</td>
-                <td><input type="text" class="input-control inv-edit" data-id="${m.ID}" data-field="Name" value="${m.Name}" style="min-width:180px;"></td>
+                <td style="color:var(--text-muted);">${m.ID || idx + 1}</td>
+                <td><input type="text" class="form-input inv-edit" data-id="${m.ID}" data-field="Name" value="${m.Name}" style="padding:4px 8px; font-size:12.5px;"></td>
                 <td>
-                    <select class="input-control inv-edit" data-id="${m.ID}" data-field="Category" style="min-width:140px;">
+                    <select class="form-select inv-edit" data-id="${m.ID}" data-field="Category" style="padding:4px 8px; font-size:12px;">
                         ${categories.map(c => `<option value="${c}" ${c === m.Category ? 'selected' : ''}>${c}</option>`).join('')}
                     </select>
                 </td>
-                <td><input type="number" step="10" class="input-control inv-edit" data-id="${m.ID}" data-field="Cost" value="${m.Cost}" style="width:110px; text-align:right; font-weight:bold;"></td>
-                <td><input type="number" step="100" class="input-control inv-edit" data-id="${m.ID}" data-field="Max_Stock_Kg" value="${m.Max_Stock_Kg || ''}" placeholder="Unlimited" style="width:100px; text-align:right;"></td>
-                <td style="text-align:center;"><button class="btn-action btn-outline-action btn-del-mat" data-id="${m.ID}" style="padding:4px 8px; color:var(--danger);" title="Delete Material">🗑️</button></td>
+                <td><input type="number" step="10" class="form-input inv-edit" data-id="${m.ID}" data-field="Cost" value="${m.Cost}" style="padding:4px 8px; font-size:12.5px; width:100px; text-align:right;"></td>
+                <td><input type="number" step="100" class="form-input inv-edit" data-id="${m.ID}" data-field="Max_Stock_Kg" value="${m.Max_Stock_Kg || ''}" placeholder="∞" style="padding:4px 8px; font-size:12.5px; width:90px; text-align:right;"></td>
+                <td style="text-align:center;"><button class="btn btn-default btn-del-mat" data-id="${m.ID}" style="padding:2px 6px; color:var(--danger);" title="Delete Material">✕</button></td>
             </tr>
         `).join('');
 
@@ -312,7 +454,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const id = parseInt(e.target.getAttribute('data-id'));
                 const field = e.target.getAttribute('data-field');
                 invMgr.updateField(id, field, e.target.value);
-                updateStats();
             });
         });
 
@@ -322,12 +463,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (confirm(`Delete material ID #${id}?`)) {
                     invMgr.deleteMaterial(id);
                     renderInventoryTable();
-                    updateStats();
                 }
             });
         });
-
-        updateStats();
     }
 
     document.getElementById('inv-filter-cat').addEventListener('change', renderInventoryTable);
@@ -338,19 +476,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm("Reset Scrap Master to original factory default compositions?")) {
             invMgr.resetToDefaults();
             renderInventoryTable();
-            updateStats();
             alert("Database reset to factory defaults!");
         }
     });
 
-    // 8. Add Material Modal
+    // 11. Add Material Modal
     const addModal = document.getElementById('modal-add-material');
     document.getElementById('btn-open-add-modal').addEventListener('click', () => {
         const container = document.getElementById('add-mat-elements-grid');
         container.innerHTML = window.ALLOYFORGE_DEFAULT_DATA.elements.map(el => `
             <div>
-                <span style="font-size:10px; color:var(--text-muted); font-weight:700;">${el} %</span>
-                <input type="number" step="0.1" class="input-control new-el-comp" data-el="${el}" value="0.0">
+                <span style="font-size:10px; color:var(--text-muted);">${el} %</span>
+                <input type="number" step="0.1" class="form-input new-el-comp" data-el="${el}" value="0.0" style="padding:3px 6px; font-size:11px;">
             </div>
         `).join('');
         addModal.classList.add('active');
@@ -376,34 +513,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const newId = invMgr.addMaterial(name, cost, cat, comp, stock);
-        alert(`✅ Material added successfully as ID #${newId}!`);
+        alert(`✅ Material added as ID #${newId}!`);
         addModal.classList.remove('active');
         renderInventoryTable();
-        updateStats();
     });
 
-    // 9. History Table
+    // 12. History Table
     function renderHistoryTable() {
         const tbody = document.getElementById('history-tbody');
         const heats = histMgr.history;
 
         if (heats.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">No furnace heats logged yet. Formulate a charge in the Optimizer tab and click "Save to Log" to record heats.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:16px;">No furnace heats logged yet.</td></tr>`;
             return;
         }
 
         tbody.innerHTML = heats.map(h => `
             <tr>
-                <td style="font-weight:700; color:var(--brand-primary);">${h.heat_id}</td>
-                <td style="color:var(--text-secondary);">${h.timestamp}</td>
-                <td style="font-weight:700;">${h.alloy_name}</td>
-                <td style="text-align:right; font-weight:600;">${h.batch_size_kg.toLocaleString()} kg</td>
-                <td><span class="status-pill pill-pass">${h.selected_option.split(':')[0]}</span></td>
+                <td style="font-weight:600; color:var(--primary);">${h.heat_id}</td>
+                <td style="color:var(--text-muted);">${h.timestamp}</td>
+                <td style="font-weight:600;">${h.alloy_name}</td>
+                <td style="text-align:right;">${h.batch_size_kg.toLocaleString()} kg</td>
+                <td>${h.selected_option.split(':')[0]}</td>
                 <td style="text-align:right;">PKR ${h.cost_per_kg.toFixed(2)}</td>
-                <td style="text-align:right; font-weight:800; color:var(--text-primary);">PKR ${h.total_cost_pkr.toLocaleString()}</td>
+                <td style="text-align:right; font-weight:700;">PKR ${h.total_cost_pkr.toLocaleString()}</td>
                 <td style="text-align:center;">
-                    <button class="btn-action btn-outline-action btn-print-heat" data-id="${h.heat_id}" style="padding:3px 8px; font-size:11px;">🖨️ Card</button>
-                    <button class="btn-action btn-outline-action btn-del-heat" data-id="${h.heat_id}" style="padding:3px 8px; font-size:11px; color:var(--danger); margin-left:4px;">🗑️</button>
+                    <button class="btn btn-default btn-print-heat" data-id="${h.heat_id}" style="padding:2px 6px;">Card</button>
+                    <button class="btn btn-default btn-del-heat" data-id="${h.heat_id}" style="padding:2px 6px; color:var(--danger); margin-left:4px;">✕</button>
                 </td>
             </tr>
         `).join('');
@@ -428,7 +564,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (confirm(`Delete heat record ${id}?`)) {
                     histMgr.deleteHeat(id);
                     renderHistoryTable();
-                    updateStats();
                 }
             });
         });
