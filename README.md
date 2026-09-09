@@ -1,145 +1,99 @@
-# ⚡ AlloyForge AI | Foundry Charge Mix Optimizer
+# ⚡ AlloyForge AI | Standalone Foundry Charge Optimizer
 
-An industrial-grade **Linear Programming (LP)** charge optimization application built for metal foundries, melt shops, and casting facilities. AlloyForge AI calculates the mathematical least-cost blend of scrap, pig iron, returns, and ferro-alloys to hit target metallurgical specifications with zero spectrometer off-spec heats.
+An industrial-grade, **zero-dependency, standalone Linear Programming (LP)** charge optimization application designed for metal foundries, melt shops, and casting facilities. 
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io)
-![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+AlloyForge AI calculates the mathematical least-cost blend of scrap, pig iron, returns, and ferro-alloys to hit target metallurgical specifications with zero off-spec heats.
 
----
-
-## 🌟 Key Features
-
-### 1. 🎯 3-Tier Multi-Option Charge Formulations
-Every calculation automatically generates 3 practical foundry charge recipes:
-- **🟢 Option 1: Lowest Cost (Maximum Economy)**: Aggressive least-cost formulation utilizing maximum cost-effective scrap while strictly adhering to chemical and tramp limits.
-- **🔵 Option 2: Balanced Standard (Mid-Spec Safety Buffer)**: Centered within target chemical tolerance bands to provide safety margins against melt variability.
-- **🟣 Option 3: High Purity Mix (Clean Charge)**: Premium virgin and clean heavy scrap mix; eliminates turnings, shavings, borings, and contaminated shells.
-
-### 2. 🔥 Furnace Oxidation & Melting Loss Engine
-In real induction furnaces and cupolas, reactive elements oxidize into slag or vaporize:
-- Built-in recovery factor adjustments: **Carbon (92%)**, **Silicon (88%)**, **Manganese (88%)**, **Chromium (95%)**, **Zinc (90%)**, **Magnesium (40%)**.
-- Guarantees tapped liquid metal exactly hits target spectrometer chemistry after oxidation losses.
-
-### 3. 🛡️ Tramp Element Guard
-Automatically restricts harmful residual tramp elements:
-- **Lead (Pb ≤ 0.015%)**, **Tin (Sn ≤ 0.030%)**, **Zinc (Zn ≤ 0.020%)**, **Phosphorus (P ≤ 0.045%)**, **Sulfur (S ≤ 0.035%)**.
-- Prevents catastrophic hot shortness, cracking, and melt contamination from unconstrained scrap.
-
-### 4. 📚 Comprehensive Alloy Preset Library (15+ Grades)
-- **Stainless Steels**: SS 304, SS 316, SS 309 (26/12), SS 310 (26/20), SS 420, SS 430, SS 201.
-- **Cast Irons**: Grey Iron (FG 200/250), Ductile / SG Iron (GGG 40/50), High Chrome White Iron (25% Cr).
-- **Carbon & Special Steels**: Mild Steel (ASTM A216 WCB), Hadfield High Manganese (12-14% Mn), H-13 Die Steel.
-- **Copper & Bronzes**: Bronze 555 (Leaded Gunmetal LG2), Tin Bronze (9-12% Sn).
-- **Custom Formulation Builder**: Fully configurable min/max bounds for any chemical specification.
-
-### 5. 📊 Visual Recipe & Chemistry Analytics
-- **Cost Distribution Donut Chart**: Interactive Plotly breakdown showing cost contribution by raw material.
-- **Spectrometer Compliance Table**: Live status badges (`OPTIMAL (PASS)`, `AT MIN LIMIT`, `AT MAX LIMIT`, `UNDER/OVER SPEC`).
-
-### 6. 📦 Scrap Master & Live Inventory Management
-- Database of 55+ raw materials with 20 chemical elements: `Cu, Sn, Zn, Pb, Fe, Ni, P, Mn, Si, Al, S, Cr, C, Mg, Ti, Mo, V, Nb, Sb, Ca`.
-- Live editable table for unit price revisions and stock availability constraints ($w_i \le \text{Max\_Stock}_i$).
-- Full modal to add custom scrap materials and export the master catalog to Excel.
-
-### 7. 📜 Furnace Heat Ledger & Printable Shop-Floor Cards
-- Complete heat history logging with supervisor/operator notes.
-- **One-Click Printable Batch Card**: Formatted HTML charge sheet with charging sequence, scale weights, operator check-boxes, and chemist sign-offs.
-- Export heat history to CSV.
+[![Platform](https://img.shields.io/badge/platform-Offline%20Browser%20%7C%20Windows%20%7C%20Mac%20%7C%20Mobile-blue)](index.html)
+[![Setup](https://img.shields.io/badge/installation-Zero%20Dependencies%20(No%20Python%20Needed)-brightgreen)](Launch_App.bat)
+[![License](https://img.shields.io/badge/license-MIT-green)](#)
 
 ---
 
-## 🛠️ Project Structure
+## 🌟 Key Capabilities
+
+### 1. 🎯 3 Cost-Tier Charge Formulations (Ranked by Lowest Price)
+Every calculation automatically formulates 3 distinct, practical foundry charge recipes:
+- **🔥 Option 1: Lowest Cost (Maximum Economy)**: Absolute least-cost formulation utilizing maximum cost-effective scrap while strictly adhering to chemical and tramp limits.
+- **⚖️ Option 2: Balanced Standard (Foundry Standard)**: Centered within target chemical tolerance bands with safety margins against melt variability.
+- **💎 Option 3: Clean Purity (Premium Charge)**: High-purity charge with hard exclusion and heavy penalization on dirty turnings, shavings, and borings.
+
+### 2. ⚡ Client-Side Two-Phase Simplex LP Engine
+- Fully embedded mathematical linear programming solver running natively in the browser with **0ms latency**.
+- Enforces strict batch weight equality ($\sum w_i = \text{Batch}$).
+- Enforces 20 chemical element tolerance limits with furnace oxidation recovery factors (**C: 92%**, **Si: 88%**, **Mn: 88%**, **Cr: 95%**, **Zn: 90%**).
+- Enforces tramp element caps (**Pb $\le$ 0.015%**, **Sn $\le$ 0.030%**, **Zn $\le$ 0.020%**, **P $\le$ 0.045%**, **S $\le$ 0.035%**).
+
+### 3. 🤖 AI Metallurgy Copilot (Interactive Assistant)
+- Natural language chat assistant (supports English & Roman Urdu).
+- Type queries like *"Calculate 1000kg of SS 304"* or *"Check price of Ferro Chrome"*.
+- Automatically extracts target alloy, batch weight, solves linear matrices, and offers a **"⚡ Load into Optimizer"** button.
+
+### 4. 📦 Live Scrap Master & Inventory Management
+- Pre-loaded with **55+ industrial raw materials** and **20 elements**: `Cu, Sn, Zn, Pb, Fe, Ni, P, Mn, Si, Al, S, Cr, C, Mg, Ti, Mo, V, Nb, Sb, Ca`.
+- **Inline Table Editing**: Revise scrap prices, categories, and stock availability limits with instant `localStorage` persistence.
+- **Add New Scrap Material**: Interactive modal with automatic balance detection.
+- **Data Export & Backup**: One-click CSV/Excel catalog export and full JSON backup/restore.
+
+### 5. 📜 Furnace Heat Ledger & 1-Click Printable Charge Cards
+- Permanent heat log history with operator/shift notes.
+- **Shop-Floor Charge Card (Heat Sheet)**: Formatted A4 printable card with charging sequence, scale weights, checkbox checklist `[ ]`, spectrometer tap targets, and operator/metallurgist/in-charge signature blocks.
+- Export heat ledger to CSV.
+
+---
+
+## 📁 Clean Project Structure
 
 ```text
 Foundary Optimizer/
 │
-├── app.py                         # Main Streamlit web application (UI & Dashboard)
-├── optimizer.py                   # SciPy HiGHS Linear Programming Solver
-├── data_manager.py                # Data ingestion, schema cleaning, JSON/Excel sync
-├── history_manager.py             # Furnace heat ledger & printable batch card generator
-├── persistent_raw_materials.json  # Persistent JSON scrap master database
-├── Scrap Master Sheet_023516.xlsx # Original raw material catalog
-├── requirements.txt               # Production Python package dependencies
-└── README.md                      # Documentation
+├── 🚀 Launch_App.bat          # 1-Click Windows Launcher (Opens default browser)
+├── 🌐 index.html              # Main Standalone Web Application
+├── 📄 README.md               # Documentation & User Guide
+├── ⚙️ .gitignore              # Git Ignore Rules
+│
+├── 📁 css/
+│   └── style.css              # Cyber-Metallic High-End Responsive Theme
+│
+├── 📁 js/
+│   ├── app.js                 # Master UI Application Controller
+│   ├── assistant.js           # AI Metallurgy Conversational Copilot
+│   ├── data.js                # Embedded Materials & 15+ Preset Library
+│   ├── history.js             # Heat History & Printable Charge Card Generator
+│   ├── inventory.js           # Live Scrap Master CRUD & LocalStorage Persistence
+│   └── solver.js              # Pure JavaScript Two-Phase Simplex LP Matrix Solver
+│
+└── 📁 data/
+    ├── persistent_raw_materials.json # JSON Master Catalog Reference
+    └── Scrap Master Sheet_023516.xlsx # Original Excel Sheet Reference
 ```
 
 ---
 
-## 🚀 Local Installation & Quick Start
+## 🚀 How to Run (One-Click, Zero Setup)
 
-### 1. Prerequisites
-- Python 3.10 or higher
-- Git
+1. **On Windows PC / Laptop**:
+   - Double-click **`Launch_App.bat`** (or double-click **`index.html`**).
+   - The application opens instantly in your default web browser (Edge, Chrome, Brave, Firefox).
 
-### 2. Clone the Repository
-```bash
-git clone https://github.com/your-username/foundry-charge-optimizer.git
-cd foundry-charge-optimizer
-```
+2. **On Mac / Linux / Chromebook**:
+   - Double-click **`index.html`**.
 
-### 3. Create a Virtual Environment (Recommended)
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
+3. **On Smartphone or Tablet (Android / iPhone / iPad)**:
+   - Open **`index.html`** in Safari or Chrome.
 
-# Linux / macOS
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 4. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 5. Launch the Application
-```bash
-streamlit run app.py
-```
-Open your browser and navigate to `http://localhost:8501`.
+> **Note**: No Python, Node.js, terminal commands, or internet connection are required! Everything runs 100% offline.
 
 ---
 
-## ☁️ Deployment Guide (Streamlit Community Cloud)
+## 📱 How to Share via WhatsApp
 
-Deploying AlloyForge AI to **Streamlit Community Cloud** is free and takes less than 3 minutes:
-
-### Step 1: Push Code to GitHub
-Ensure all files including `app.py`, `optimizer.py`, `data_manager.py`, `history_manager.py`, `persistent_raw_materials.json`, and `requirements.txt` are committed and pushed to your GitHub repository:
-```bash
-git init
-git add .
-git commit -m "Initial release of AlloyForge AI"
-git branch -M main
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git
-git push -u origin main
-```
-
-### Step 2: Deploy on Streamlit Cloud
-1. Visit [share.streamlit.io](https://share.streamlit.io) and log in with GitHub.
-2. Click **New app**.
-3. Select your **Repository**, **Branch** (`main`), and set **Main file path** to `app.py`.
-4. Click **Deploy!**.
-
-Your app will be live with a public URL (e.g. `https://your-foundry-optimizer.streamlit.app`) accessible from any desktop, tablet, or mobile phone.
-
----
-
-## 📦 Dependencies
-
-| Package | Minimum Version | Purpose |
-|---|---|---|
-| `streamlit` | `>=1.35.0` | Frontend web interface & reactive state management |
-| `scipy` | `>=1.10.0` | Matrix Linear Programming solver (`method='highs'`) |
-| `pandas` | `>=2.0.0` | Tabular data manipulation & indexing |
-| `numpy` | `>=1.24.0` | Matrix vectorization & chemical math |
-| `plotly` | `>=5.18.0` | Interactive cost & chemistry visualization |
-| `openpyxl` | `>=3.1.0` | Excel spreadsheet read/write support |
+1. Right-click the `Foundary Optimizer` folder and select **Compress to ZIP** (`Foundry_Optimizer_v2.0.zip`).
+2. The total ZIP size is **under 1.2 MB**.
+3. Send it as a document on WhatsApp.
+4. Your client simply extracts the ZIP and double-clicks **`Launch_App.bat`**!
 
 ---
 
 ## 📄 License
-
 This project is licensed under the **MIT License**.
