@@ -4,428 +4,481 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AlloyForge | Foundry Charge Optimizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- CLEAN MINIMAL NAVBAR -->
-    <nav class="navbar">
-        <div class="navbar-inner">
-            <a href="#" class="nav-brand">
-                <span class="logo-icon">⚡</span>
-                AlloyForge
-            </a>
-            <div class="nav-links">
-                <button class="nav-link active" data-tab="tab-optimizer">Optimizer</button>
-                <button class="nav-link" data-tab="tab-inventory">Scrap Master</button>
-                <button class="nav-link" data-tab="tab-history">Heat Ledger</button>
+
+<!-- ================================================================
+     PROFESSIONAL NAVIGATION BAR
+     ================================================================ -->
+<nav class="navbar">
+    <div class="navbar-inner">
+        <!-- Brand -->
+        <a href="#" class="nav-brand">
+            <div class="logo-mark">⚙️</div>
+            <div class="brand-text">
+                <span class="brand-name">AlloyForge</span>
+                <span class="brand-tagline">Charge Optimizer</span>
+            </div>
+        </a>
+
+        <!-- Primary Tabs -->
+        <div class="nav-links">
+            <button class="nav-link active" data-tab="tab-optimizer">⚡ Optimizer</button>
+            <button class="nav-link" data-tab="tab-inventory">📦 Scrap Master</button>
+            <button class="nav-link" data-tab="tab-history">📋 Heat Ledger</button>
+        </div>
+
+        <!-- Right-side status -->
+        <div class="nav-right">
+            <span class="status-dot">System Ready</span>
+            <span class="version-badge">v3.0 Pro</span>
+        </div>
+    </div>
+</nav>
+
+<!-- ================================================================
+     MAIN PAGE WRAPPER
+     ================================================================ -->
+<div class="page-container">
+
+    <!-- ============================================================
+         TAB 1 — OPTIMIZER
+         ============================================================ -->
+    <main id="tab-optimizer" class="tab-view active">
+
+        <!-- Page Hero -->
+        <div class="tab-hero">
+            <div class="tab-hero-text">
+                <div class="tab-hero-title">Charge Recipe Optimizer</div>
+                <div class="tab-hero-sub">Select target alloy grade, define composition limits, then run LP optimization to get 3 ranked charge recipes.</div>
             </div>
         </div>
-    </nav>
 
-    <!-- PAGE CONTAINER -->
-    <div class="page-container">
-        <!-- ================= TAB 1: OPTIMIZER ================= -->
-        <main id="tab-optimizer" class="tab-view active">
-            <!-- Top Controls Row -->
+        <!-- ── INPUT CONTROLS ── -->
+        <div class="card">
+            <div class="section-label">Batch Setup</div>
+            <div class="grid-2">
+
+                <!-- Left: Preset & Weight -->
+                <div>
+                    <div class="form-group">
+                        <label class="form-label">Target Alloy Grade</label>
+                        <select id="preset-selector" class="form-select"></select>
+                        <div id="preset-desc" style="font-size:12px; color:var(--text-muted); margin-top:5px; line-height:1.4;"></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Batch Total Weight (Kg)</label>
+                        <input type="number" id="batch-weight" class="form-input" value="1000" min="50" max="50000" step="50">
+                        <div class="pill-group">
+                            <span class="pill" onclick="setBatchWeight(500)">500 kg</span>
+                            <span class="pill" onclick="setBatchWeight(1000)">1,000 kg</span>
+                            <span class="pill" onclick="setBatchWeight(2000)">2,000 kg</span>
+                            <span class="pill" onclick="setBatchWeight(5000)">5,000 kg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Furnace Parameters -->
+                <div>
+                    <label class="form-label">Furnace Operating Parameters</label>
+                    <div class="control-toggles">
+                        <label class="control-toggle-item">
+                            <input type="checkbox" id="toggle-recovery" checked>
+                            <span><b>Oxidation Loss</b> — Apply recovery factors (C 92%, Si 88%, Mn 88%)</span>
+                        </label>
+                        <label class="control-toggle-item">
+                            <input type="checkbox" id="toggle-tramp" checked>
+                            <span><b>Tramp Guard</b> — Cap residual Pb, Sn, Zn accumulation</span>
+                        </label>
+                        <label class="control-toggle-item">
+                            <input type="checkbox" id="toggle-stock" checked>
+                            <span><b>Stock Limits</b> — Enforce scrap yard availability caps</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── CHEMICAL COMPOSITION MATRIX ── -->
+        <div class="card">
+            <div class="matrix-toolbar">
+                <div>
+                    <div class="card-title">Chemical Composition Targets (%)</div>
+                    <div class="card-subtitle">Adjust Min & Max bounds per element using sliders or type directly</div>
+                </div>
+                <div class="element-add-wrapper">
+                    <select id="select-add-element" class="form-select" style="width:auto; padding:7px 12px; font-size:12.5px;">
+                        <option value="">+ Add Element Constraint</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="elements-slider-grid" class="elements-slider-grid"></div>
+
+            <div style="margin-top:22px;">
+                <button id="btn-optimize" class="btn-calculate">
+                    ⚡ &nbsp;Calculate Optimal Charge Recipes
+                </button>
+            </div>
+        </div>
+
+        <!-- ── RESULTS SECTION (hidden until calculated) ── -->
+        <div id="results-section" class="results-container" style="display:none;">
+
+            <div class="results-heading" id="results-header-title"></div>
+
+            <!-- 3 Tier Summary Cards -->
+            <div class="grid-3" style="margin-bottom:24px;">
+                <div id="card-opt-1" class="tier-card tier-1"></div>
+                <div id="card-opt-2" class="tier-card tier-2"></div>
+                <div id="card-opt-3" class="tier-card tier-3"></div>
+            </div>
+
+            <!-- Recipe & Chemistry Detail Drill-Down -->
             <div class="card">
-                <div class="grid-2">
-                    <!-- Alloy Preset & Batch Weight -->
-                    <div>
-                        <div class="form-group">
-                            <label class="form-label">Target Alloy Grade</label>
-                            <select id="preset-selector" class="form-select"></select>
-                            <div id="preset-desc" style="font-size:11.5px; color:var(--text-muted); margin-top:4px;"></div>
+                <div class="subtabs-bar">
+                    <button class="subtab-btn active" onclick="switchOptSubtab(1, this)">Option 1 — Lowest Cost</button>
+                    <button class="subtab-btn" onclick="switchOptSubtab(2, this)">Option 2 — Balanced Mix</button>
+                    <button class="subtab-btn" onclick="switchOptSubtab(3, this)">Option 3 — Clean Purity</button>
+                </div>
+
+                <!-- Detail Panel 1 -->
+                <div id="opt-subtab-1" class="subtab-content">
+                    <div class="grid-2">
+                        <!-- Scale Recipe Table -->
+                        <div>
+                            <div class="section-label">Scale Weighing Recipe</div>
+                            <div class="table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Material</th>
+                                            <th>Category</th>
+                                            <th style="text-align:right;">Weight (kg)</th>
+                                            <th style="text-align:right;">Share %</th>
+                                            <th style="text-align:right;">Cost (PKR)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recipe-tbody-1"></tbody>
+                                </table>
+                            </div>
+                            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <input type="text" id="notes-opt-1" class="form-input" placeholder="Operator / shift note..." style="flex:1; min-width:140px;">
+                                <button id="btn-save-opt-1" class="btn btn-green">💾 Save Heat</button>
+                                <button id="btn-print-opt-1" class="btn btn-default">🖨️ Print Card</button>
+                            </div>
                         </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">Batch Total Weight (Kg)</label>
-                            <input type="number" id="batch-weight" class="form-input" value="1000" min="50" max="50000" step="50">
-                            <div class="pill-group">
-                                <span class="pill" onclick="setBatchWeight(500)">500 kg</span>
-                                <span class="pill" onclick="setBatchWeight(1000)">1,000 kg</span>
-                                <span class="pill" onclick="setBatchWeight(2000)">2,000 kg</span>
-                                <span class="pill" onclick="setBatchWeight(5000)">5,000 kg</span>
+                        <!-- Spectrometer Chemistry Table -->
+                        <div>
+                            <div class="section-label">Spectrometer Tap Chemistry</div>
+                            <div class="table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Element</th>
+                                            <th>Min %</th>
+                                            <th>Max %</th>
+                                            <th>Achieved</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="chem-tbody-1"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Furnace Parameters -->
-                    <div>
-                        <label class="form-label">Furnace Operating Parameters</label>
-                        <div class="control-toggles">
-                            <label class="control-toggle-item">
-                                <input type="checkbox" id="toggle-recovery" checked>
-                                <span>Oxidation Loss (C 92%, Si 88%, Mn 88%)</span>
-                            </label>
-                            <label class="control-toggle-item">
-                                <input type="checkbox" id="toggle-tramp" checked>
-                                <span>Tramp Element Guard (Pb, Sn, Zn)</span>
-                            </label>
-                            <label class="control-toggle-item">
-                                <input type="checkbox" id="toggle-stock" checked>
-                                <span>Enforce Scrap Yard Stock Limits</span>
-                            </label>
+                <!-- Detail Panel 2 -->
+                <div id="opt-subtab-2" class="subtab-content" style="display:none;">
+                    <div class="grid-2">
+                        <div>
+                            <div class="section-label">Scale Weighing Recipe</div>
+                            <div class="table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Material</th>
+                                            <th>Category</th>
+                                            <th style="text-align:right;">Weight (kg)</th>
+                                            <th style="text-align:right;">Share %</th>
+                                            <th style="text-align:right;">Cost (PKR)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recipe-tbody-2"></tbody>
+                                </table>
+                            </div>
+                            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <input type="text" id="notes-opt-2" class="form-input" placeholder="Operator / shift note..." style="flex:1; min-width:140px;">
+                                <button id="btn-save-opt-2" class="btn btn-green">💾 Save Heat</button>
+                                <button id="btn-print-opt-2" class="btn btn-default">🖨️ Print Card</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">Spectrometer Tap Chemistry</div>
+                            <div class="table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Element</th>
+                                            <th>Min %</th>
+                                            <th>Max %</th>
+                                            <th>Achieved</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="chem-tbody-2"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Detail Panel 3 -->
+                <div id="opt-subtab-3" class="subtab-content" style="display:none;">
+                    <div class="grid-2">
+                        <div>
+                            <div class="section-label">Scale Weighing Recipe</div>
+                            <div class="table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Material</th>
+                                            <th>Category</th>
+                                            <th style="text-align:right;">Weight (kg)</th>
+                                            <th style="text-align:right;">Share %</th>
+                                            <th style="text-align:right;">Cost (PKR)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recipe-tbody-3"></tbody>
+                                </table>
+                            </div>
+                            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <input type="text" id="notes-opt-3" class="form-input" placeholder="Operator / shift note..." style="flex:1; min-width:140px;">
+                                <button id="btn-save-opt-3" class="btn btn-green">💾 Save Heat</button>
+                                <button id="btn-print-opt-3" class="btn btn-default">🖨️ Print Card</button>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-label">Spectrometer Tap Chemistry</div>
+                            <div class="table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Element</th>
+                                            <th>Min %</th>
+                                            <th>Max %</th>
+                                            <th>Achieved</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="chem-tbody-3"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /card -->
+        </div><!-- /results-section -->
+    </main>
+
+    <!-- ============================================================
+         TAB 2 — SCRAP MASTER
+         ============================================================ -->
+    <main id="tab-inventory" class="tab-view">
+
+        <!-- Page Hero -->
+        <div class="tab-hero">
+            <div class="tab-hero-text">
+                <div class="tab-hero-title">Scrap Master Catalog</div>
+                <div class="tab-hero-sub">Live editable material database — update prices, compositions, and stock limits. Import your existing Excel sheet directly.</div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; flex-shrink:0;">
+                <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none;">
+                <button id="btn-import-excel" class="btn btn-green">📂 Import Excel (.xlsx)</button>
+                <button id="btn-export-excel" class="btn btn-default">📥 Export Excel (.xlsx)</button>
+                <button id="btn-open-add-modal" class="btn btn-primary">+ Add Material</button>
+                <button id="btn-reset-db" class="btn btn-default" style="color:var(--danger);">↺ Reset Defaults</button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom:0;">
+            <!-- Filters Toolbar -->
+            <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                <div style="display:flex; gap:10px; flex-wrap:wrap; flex:1;">
+                    <select id="inv-filter-cat" class="form-select" style="max-width:230px;">
+                        <option value="all">All Categories</option>
+                    </select>
+                    <input type="text" id="inv-search" class="form-input" placeholder="Search by material name..." style="max-width:280px;">
+                </div>
+                <div style="font-size:12px; color:var(--text-muted);">
+                    💡 Click any price or name cell to edit directly in-table
                 </div>
             </div>
 
-            <!-- Dynamic Chemical Targets Matrix with Sliders -->
-            <div class="card">
-                <div class="matrix-toolbar">
-                    <div>
-                        <div class="card-title">Chemical Composition Targets (%)</div>
-                        <div class="card-subtitle">Adjust Min & Max bounds with sliders or number boxes</div>
-                    </div>
-                    <div class="element-add-wrapper">
-                        <select id="select-add-element" class="form-select" style="width: auto; padding: 5px 10px; font-size: 12px;">
-                            <option value="">+ Add Constrained Element</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="elements-slider-grid" class="elements-slider-grid"></div>
-
-                <div style="margin-top: 20px;">
-                    <button id="btn-optimize" class="btn-calculate">
-                        ⚡ Calculate Optimal Charge Recipes
-                    </button>
-                </div>
+            <!-- Master Table -->
+            <div class="table-wrapper" style="max-height:560px; overflow-y:auto; overflow-x:auto;">
+                <table class="data-table" id="table-scrap-master">
+                    <thead>
+                        <tr id="scrap-table-header-row">
+                            <th style="width:42px;">#</th>
+                            <th>Scrap / Alloy Name</th>
+                            <th>Category</th>
+                            <th style="text-align:right;">Price (PKR/Kg)</th>
+                            <th style="text-align:right;">Max Stock (Kg)</th>
+                            <th style="text-align:center;">Composition</th>
+                            <th style="width:44px; text-align:center;">Del</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-tbody"></tbody>
+                </table>
             </div>
+        </div>
+    </main>
 
-            <!-- ================= RESULTS SECTION ================= -->
-            <div id="results-section" class="results-container" style="display: none;">
-                <div class="results-heading" id="results-header-title"></div>
+    <!-- ============================================================
+         TAB 3 — HEAT LEDGER
+         ============================================================ -->
+    <main id="tab-history" class="tab-view">
 
-                <!-- 3 Tier Cards -->
-                <div class="grid-3" style="margin-bottom: 20px;">
-                    <div id="card-opt-1" class="tier-card tier-1"></div>
-                    <div id="card-opt-2" class="tier-card tier-2"></div>
-                    <div id="card-opt-3" class="tier-card tier-3"></div>
-                </div>
-
-                <!-- Recipe Details Drill-Down -->
-                <div class="card">
-                    <div class="subtabs-bar">
-                        <button class="subtab-btn active" onclick="switchOptSubtab(1)">Option 1: Lowest Cost</button>
-                        <button class="subtab-btn" onclick="switchOptSubtab(2)">Option 2: Balanced Standard</button>
-                        <button class="subtab-btn" onclick="switchOptSubtab(3)">Option 3: Clean Purity</button>
-                    </div>
-
-                    <!-- Details Tab 1 -->
-                    <div id="opt-subtab-1" class="subtab-content">
-                        <div class="grid-2">
-                            <div>
-                                <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Scale Weighing Recipe</div>
-                                <div class="table-wrapper">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Material</th>
-                                                <th>Category</th>
-                                                <th style="text-align:right;">Weight</th>
-                                                <th style="text-align:right;">Share %</th>
-                                                <th style="text-align:right;">Cost (PKR)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="recipe-tbody-1"></tbody>
-                                    </table>
-                                </div>
-                                <div style="margin-top: 12px; display:flex; gap:8px;">
-                                    <input type="text" id="notes-opt-1" class="form-input" placeholder="Operator shift note..." style="flex:1;">
-                                    <button id="btn-save-opt-1" class="btn btn-green">💾 Save</button>
-                                    <button id="btn-print-opt-1" class="btn btn-default">🖨️ Print Card</button>
-                                </div>
-                            </div>
-                            <div>
-                                <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Spectrometer Tap Chemistry</div>
-                                <div class="table-wrapper">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Element</th>
-                                                <th>Min %</th>
-                                                <th>Max %</th>
-                                                <th>Achieved</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="chem-tbody-1"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Details Tab 2 -->
-                    <div id="opt-subtab-2" class="subtab-content" style="display:none;">
-                        <div class="grid-2">
-                            <div>
-                                <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Scale Weighing Recipe</div>
-                                <div class="table-wrapper">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Material</th>
-                                                <th>Category</th>
-                                                <th style="text-align:right;">Weight</th>
-                                                <th style="text-align:right;">Share %</th>
-                                                <th style="text-align:right;">Cost (PKR)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="recipe-tbody-2"></tbody>
-                                    </table>
-                                </div>
-                                <div style="margin-top: 12px; display:flex; gap:8px;">
-                                    <input type="text" id="notes-opt-2" class="form-input" placeholder="Operator shift note..." style="flex:1;">
-                                    <button id="btn-save-opt-2" class="btn btn-green">💾 Save</button>
-                                    <button id="btn-print-opt-2" class="btn btn-default">🖨️ Print Card</button>
-                                </div>
-                            </div>
-                            <div>
-                                <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Spectrometer Tap Chemistry</div>
-                                <div class="table-wrapper">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Element</th>
-                                                <th>Min %</th>
-                                                <th>Max %</th>
-                                                <th>Achieved</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="chem-tbody-2"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Details Tab 3 -->
-                    <div id="opt-subtab-3" class="subtab-content" style="display:none;">
-                        <div class="grid-2">
-                            <div>
-                                <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Scale Weighing Recipe</div>
-                                <div class="table-wrapper">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Material</th>
-                                                <th>Category</th>
-                                                <th style="text-align:right;">Weight</th>
-                                                <th style="text-align:right;">Share %</th>
-                                                <th style="text-align:right;">Cost (PKR)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="recipe-tbody-3"></tbody>
-                                    </table>
-                                </div>
-                                <div style="margin-top: 12px; display:flex; gap:8px;">
-                                    <input type="text" id="notes-opt-3" class="form-input" placeholder="Operator shift note..." style="flex:1;">
-                                    <button id="btn-save-opt-3" class="btn btn-green">💾 Save</button>
-                                    <button id="btn-print-opt-3" class="btn btn-default">🖨️ Print Card</button>
-                                </div>
-                            </div>
-                            <div>
-                                <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Spectrometer Tap Chemistry</div>
-                                <div class="table-wrapper">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Element</th>
-                                                <th>Min %</th>
-                                                <th>Max %</th>
-                                                <th>Achieved</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="chem-tbody-3"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="tab-hero">
+            <div class="tab-hero-text">
+                <div class="tab-hero-title">Furnace Heat Ledger</div>
+                <div class="tab-hero-sub">Complete chronological record of all saved heat calculations. Print batch charge cards for shop floor operators.</div>
             </div>
-        </main>
+            <button id="btn-export-heats-csv" class="btn btn-default" style="flex-shrink:0;">📤 Export CSV</button>
+        </div>
 
-        <!-- ================= TAB 2: SCRAP MASTER ================= -->
-        <main id="tab-inventory" class="tab-view">
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <div class="card-title">Scrap Master Catalog & Pricing</div>
-                        <div class="card-subtitle">Direct Excel Import/Export with Automatic "Balance" & "Tracer" Detection</div>
-                    </div>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <!-- Hidden Excel File Input -->
-                        <input type="file" id="excel-file-input" accept=".xlsx, .xls" style="display:none;">
-                        <button id="btn-import-excel" class="btn btn-green">📂 Import Excel (.xlsx)</button>
-                        <button id="btn-export-excel" class="btn btn-default">📥 Export Excel (.xlsx)</button>
-                        <button id="btn-open-add-modal" class="btn btn-default">+ Add Scrap</button>
-                        <button id="btn-reset-db" class="btn btn-default" style="color:var(--danger);">Reset Defaults</button>
-                    </div>
-                </div>
-
-                <!-- Search & Filters Toolbar -->
-                <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-                    <div style="display:flex; gap:10px; flex:1; min-width:280px;">
-                        <select id="inv-filter-cat" class="form-select" style="max-width:220px;">
-                            <option value="all">All Categories</option>
-                        </select>
-                        <input type="text" id="inv-search" class="form-input" placeholder="Search scrap by name...">
-                    </div>
-                    <div style="font-size:12px; color:var(--text-muted);">
-                        💡 <i>Click any price, name, or element cell to edit directly.</i>
-                    </div>
-                </div>
-
-                <!-- Editable Master Table -->
-                <div class="table-wrapper" style="max-height: 540px; overflow-x: auto;">
-                    <table class="data-table" id="table-scrap-master">
-                        <thead>
-                            <tr id="scrap-table-header-row">
-                                <th style="width:36px;">#</th>
-                                <th>Scrap / Alloy Name</th>
-                                <th>Category</th>
-                                <th style="text-align:right;">Price (PKR/Kg)</th>
-                                <th style="text-align:right;">Max Stock (Kg)</th>
-                                <th style="text-align:center;">Composition</th>
-                                <th style="width:40px; text-align:center;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventory-tbody"></tbody>
-                    </table>
-                </div>
+        <div class="card" style="margin-bottom:0;">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Heat ID</th>
+                            <th>Date &amp; Time</th>
+                            <th>Alloy Grade</th>
+                            <th style="text-align:right;">Batch (Kg)</th>
+                            <th>Strategy</th>
+                            <th style="text-align:right;">Cost / Kg</th>
+                            <th style="text-align:right;">Total Cost (PKR)</th>
+                            <th style="text-align:center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody"></tbody>
+                </table>
             </div>
-        </main>
+        </div>
+    </main>
 
-        <!-- ================= TAB 3: HEAT LEDGER ================= -->
-        <main id="tab-history" class="tab-view">
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <div class="card-title">Furnace Heat History Ledger</div>
-                        <div class="card-subtitle">Official records of formulated heats</div>
-                    </div>
-                    <button id="btn-export-heats-csv" class="btn btn-default">Export CSV</button>
-                </div>
+</div><!-- /page-container -->
 
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Heat ID</th>
-                                <th>Date & Time</th>
-                                <th>Alloy Grade</th>
-                                <th style="text-align:right;">Batch (Kg)</th>
-                                <th>Option</th>
-                                <th style="text-align:right;">Cost / Kg</th>
-                                <th style="text-align:right;">Total Cost</th>
-                                <th style="text-align:center;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-    </div>
+<!-- ================================================================
+     MODAL — ADD NEW SCRAP MATERIAL
+     ================================================================ -->
+<div id="modal-add-material" class="modal-overlay">
+    <div class="modal-box" style="max-width:660px;">
+        <div class="modal-header">
+            <div class="modal-title">Add New Scrap / Raw Material</div>
+            <button class="modal-close" id="btn-close-modal">✕</button>
+        </div>
 
-    <!-- ADD MATERIAL MODAL (WITH BALANCE AUTO-CALCULATION) -->
-    <div id="modal-add-material" class="modal-overlay">
-        <div class="modal-box" style="max-width: 640px;">
-            <div class="card-header" style="margin-bottom:12px;">
-                <div class="modal-title">Add New Scrap / Raw Material</div>
-                <button class="btn btn-default" id="btn-close-modal" style="padding:2px 8px;">✕</button>
+        <div class="form-group">
+            <label class="form-label">Material / Scrap Name</label>
+            <input type="text" id="new-mat-name" class="form-input" placeholder="e.g. BRONZE GEAR SHAVINGS">
+        </div>
+
+        <div class="grid-3">
+            <div class="form-group">
+                <label class="form-label">Price / Kg (PKR)</label>
+                <input type="number" id="new-mat-cost" class="form-input" value="250">
             </div>
             <div class="form-group">
-                <label class="form-label">Material / Scrap Name</label>
-                <input type="text" id="new-mat-name" class="form-input" placeholder="e.g. BRONZE GEAR SHAVINGS">
+                <label class="form-label">Max Stock (Kg)</label>
+                <input type="number" id="new-mat-stock" class="form-input" placeholder="Unlimited">
             </div>
-            <div class="grid-3">
-                <div class="form-group">
-                    <label class="form-label">Price / Kg (PKR)</label>
-                    <input type="number" id="new-mat-cost" class="form-input" value="250">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Category</label>
-                    <select id="new-mat-cat" class="form-select">
-                        <option value="Stainless & High Alloy">Stainless & High Alloy</option>
-                        <option value="Cast Iron & Pig Iron">Cast Iron & Pig Iron</option>
-                        <option value="Copper & Bronze">Copper & Bronze</option>
-                        <option value="Ferro Alloys">Ferro Alloys</option>
-                        <option value="Carbon & Special Steel">Carbon & Special Steel</option>
-                        <option value="Virgin Metals & Additives">Virgin Metals & Additives</option>
-                        <option value="Custom Scrap">Custom Scrap</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Balance Element</label>
-                    <select id="new-mat-balance-el" class="form-select">
-                        <option value="None">None (Manual Sum)</option>
-                        <option value="Fe" selected>Fe (Iron Balance)</option>
-                        <option value="Cu">Cu (Copper Balance)</option>
-                        <option value="Ni">Ni (Nickel Balance)</option>
-                        <option value="Al">Al (Aluminium Balance)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin: 12px 0 6px 0;">
-                <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
-                    Chemical Composition (%) — (Traces = 0.0)
-                </span>
-                <span id="add-mat-total-preview" style="font-size:11px; font-weight:700; color:var(--green);">
-                    Total: 100.00%
-                </span>
-            </div>
-            <div id="add-mat-elements-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(85px, 1fr)); gap:8px; max-height:200px; overflow-y:auto; padding:6px; background:#f9fafb; border:1px solid var(--border); border-radius:6px;"></div>
-
-            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
-                <button id="btn-cancel-modal" class="btn btn-default">Cancel</button>
-                <button id="btn-save-new-material" class="btn btn-green">Save Material</button>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select id="new-mat-cat" class="form-select">
+                    <option value="Stainless &amp; High Alloy">Stainless &amp; High Alloy</option>
+                    <option value="Cast Iron &amp; Pig Iron">Cast Iron &amp; Pig Iron</option>
+                    <option value="Copper &amp; Bronze">Copper &amp; Bronze</option>
+                    <option value="Ferro Alloys">Ferro Alloys</option>
+                    <option value="Carbon &amp; Special Steel">Carbon &amp; Special Steel</option>
+                    <option value="Virgin Metals &amp; Additives">Virgin Metals &amp; Additives</option>
+                    <option value="Custom Scrap">Custom Scrap</option>
+                </select>
             </div>
         </div>
-    </div>
 
-    <!-- VIEW/EDIT COMPOSITION MODAL -->
-    <div id="modal-edit-composition" class="modal-overlay">
-        <div class="modal-box" style="max-width: 640px;">
-            <div class="card-header" style="margin-bottom:12px;">
-                <div class="modal-title" id="edit-comp-mat-title">Edit Material Composition</div>
-                <button class="btn btn-default" id="btn-close-comp-modal" style="padding:2px 8px;">✕</button>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="font-size:12px; color:var(--text-muted);">Adjust individual element percentages for this scrap:</span>
-                <span id="edit-comp-total-readout" style="font-size:12px; font-weight:700; color:var(--green);">Total: 100.00%</span>
-            </div>
-            <div id="edit-mat-elements-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(85px, 1fr)); gap:8px; max-height:220px; overflow-y:auto; padding:6px; background:#f9fafb; border:1px solid var(--border); border-radius:6px;"></div>
-            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
-                <button id="btn-cancel-comp-modal" class="btn btn-default">Cancel</button>
-                <button id="btn-save-comp-modal" class="btn btn-green">Update Composition</button>
-            </div>
+        <div class="form-group">
+            <label class="form-label">Balance Element (auto-computes remaining %)</label>
+            <select id="new-mat-balance-el" class="form-select" style="max-width:260px;">
+                <option value="None">None (Manual Sum)</option>
+                <option value="Fe" selected>Fe — Iron Balance</option>
+                <option value="Cu">Cu — Copper Balance</option>
+                <option value="Ni">Ni — Nickel Balance</option>
+                <option value="Al">Al — Aluminium Balance</option>
+            </select>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin: 14px 0 8px 0;">
+            <span class="section-label" style="margin:0; padding:0; border:none;">Chemical Composition (%) — Traces = 0.0</span>
+            <span id="add-mat-total-preview" style="font-size:12px; font-weight:700; color:var(--green);">Total: 100.00%</span>
+        </div>
+
+        <div id="add-mat-elements-grid" class="comp-grid"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+            <button id="btn-cancel-modal" class="btn btn-default">Cancel</button>
+            <button id="btn-save-new-material" class="btn btn-green">💾 Save Material</button>
         </div>
     </div>
+</div>
 
-    <!-- Scripts -->
-    <script src="js/xlsx.full.min.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/solver.js"></script>
-    <script src="js/inventory.js"></script>
-    <script src="js/history.js"></script>
-    <script src="js/app.js"></script>
-    <script>
-        function setBatchWeight(val) {
-            document.getElementById('batch-weight').value = val;
-        }
+<!-- ================================================================
+     MODAL — EDIT COMPOSITION
+     ================================================================ -->
+<div id="modal-edit-composition" class="modal-overlay">
+    <div class="modal-box" style="max-width:660px;">
+        <div class="modal-header">
+            <div class="modal-title" id="edit-comp-mat-title">Edit Material Composition</div>
+            <button class="modal-close" id="btn-close-comp-modal">✕</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:12.5px; color:var(--text-muted);">Adjust individual element percentages for this scrap material:</span>
+            <span id="edit-comp-total-readout" style="font-size:12.5px; font-weight:700; color:var(--green);">Total: 100.00%</span>
+        </div>
+        <div id="edit-mat-elements-grid" class="comp-grid"></div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:20px;">
+            <button id="btn-cancel-comp-modal" class="btn btn-default">Cancel</button>
+            <button id="btn-save-comp-modal" class="btn btn-green">✅ Update Composition</button>
+        </div>
+    </div>
+</div>
 
-        function switchOptSubtab(num) {
-            document.querySelectorAll('.subtab-content').forEach(c => c.style.display = 'none');
-            document.querySelectorAll('.subtabs-bar .subtab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`opt-subtab-${num}`).style.display = 'block';
-            event.target.classList.add('active');
-        }
-    </script>
+<!-- ================================================================
+     SCRIPTS
+     ================================================================ -->
+<script src="js/xlsx.full.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/solver.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/history.js"></script>
+<script src="js/app.js"></script>
+<script>
+    function setBatchWeight(val) {
+        document.getElementById('batch-weight').value = val;
+    }
+
+    function switchOptSubtab(num, btn) {
+        document.querySelectorAll('.subtab-content').forEach(c => c.style.display = 'none');
+        document.querySelectorAll('.subtabs-bar .subtab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`opt-subtab-${num}`).style.display = 'block';
+        if (btn) btn.classList.add('active');
+    }
+</script>
+
 </body>
 </html>

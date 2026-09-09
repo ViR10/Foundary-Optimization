@@ -521,9 +521,9 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = elements.map(el => {
             const v = parseFloat(mat[el] || 0.0);
             return `
-                <div style="background:#ffffff; border:1px solid var(--border); padding:4px 6px; border-radius:4px;">
-                    <span style="font-size:10px; font-weight:700; color:var(--text-muted);">${el} %</span>
-                    <input type="number" step="0.05" class="form-input edit-comp-val" data-el="${el}" value="${v.toFixed(3)}" style="padding:2px 4px; font-size:11.5px; text-align:right;">
+                <div class="comp-grid-cell">
+                    <span class="comp-el-label">${el} %</span>
+                    <input type="number" step="0.05" class="form-input edit-comp-val" data-el="${el}" value="${v.toFixed(3)}" style="padding:3px 5px; font-size:12px; text-align:right;">
                 </div>
             `;
         }).join('');
@@ -572,9 +572,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const elements = window.ALLOYFORGE_DEFAULT_DATA.elements;
 
         container.innerHTML = elements.map(el => `
-            <div style="background:#ffffff; border:1px solid var(--border); padding:4px 6px; border-radius:4px;">
-                <span style="font-size:10px; font-weight:700; color:var(--text-muted);">${el} %</span>
-                <input type="text" class="form-input new-el-input" data-el="${el}" placeholder="0" style="padding:2px 4px; font-size:11.5px; text-align:right;">
+            <div class="comp-grid-cell">
+                <span class="comp-el-label">${el} %</span>
+                <input type="text" class="form-input new-el-input" data-el="${el}" placeholder="0" style="padding:3px 5px; font-size:12px; text-align:right;">
             </div>
         `).join('');
 
